@@ -2,8 +2,8 @@
 
 #
 # Multicast Video Streaming
-# https://github.com/rtauxerre/Multicast
-# Copyright (c) 2022 Michaël Roy
+# https://github.com/microy/RT-Auxerre
+# Copyright (c) 2022-2023 Michaël Roy
 # usage : $ ./stream.py
 #
 
@@ -28,7 +28,8 @@ parser.add_argument( '--dscp', default=dscp, help='DSCP (default: {})'.format( d
 arguments = parser.parse_args()
 
 # Define the command line
-command = 'cvlc ' + arguments.video + ' --sout \'#rtp{dst=' + arguments.address + ',port=' + arguments.port + ',mux=ts,ttl=' + arguments.ttl + '}\' --sout-all --sout-keep --loop --dscp ' + arguments.dscp
+command = f'cvlc {arguments.video} --sout \'#rtp{{dst={arguments.address},port={arguments.port},mux=ts,ttl={arguments.ttl}}}\' --sout-all --sout-keep --loop --dscp {arguments.dscp}'
+
 print( '\n' + command + '\n' )
 
 # Execute the command to stream
