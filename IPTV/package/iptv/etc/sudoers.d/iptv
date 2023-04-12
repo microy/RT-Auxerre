@@ -1,0 +1,2 @@
+# Allow the web interface to manage the IPTV service
+www-data ALL=(ALL) NOPASSWD: /bin/systemctl, /bin/journalctl

@@ -1,0 +1,10 @@
+[Unit]
+Description=TV streaming service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/dvblast --quiet --frequency 554000000 --config-file /etc/dvblast/iptv.conf
+
+[Install]
+WantedBy=multi-user.target

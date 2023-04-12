@@ -1,0 +1,8 @@
+Package: iptv
+Version: 1.0
+Section: video
+Priority: optional
+Architecture: all
+Depends: dvblast, w-scan, dvb-apps, dtv-scan-tables, dvb-tools, lighttpd, php-cgi
+Maintainer: Michaël Roy <microygh@gmail.com>
+Description: Stream the TV
