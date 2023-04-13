@@ -8,6 +8,7 @@
 #
 
 # External modules
+import http
 import http.server
 import os
 import platform
@@ -34,7 +35,8 @@ WEBPAGE = f'''\
 <html>
 <head><link rel="icon" href="data:," /></head>
 <body style="font-family:sans-serif;">
-<h1>Bienvenue sur {platform.node()} en {{}} !!!</h1>
+<h1>Bienvenue sur {platform.node()} !!!</h1>
+<p>Vous êtes connectés en {{}}</p>
 <p>Votre adresse est {{}}</p>
 </body>
 </html>
@@ -59,16 +61,20 @@ class HTTPServer( http.server.HTTPServer ) :
 class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
 	# Handle GET request
 	def do_GET( self ) :
-		# Send response
-		self.send_response( 200 )
-		# Send header
-		self.send_header( 'Content-type', 'text/html' )
+		# Redirect if necessary
+		if self.path != '/' :
+			self.send_response( http.HTTPStatus.MOVED_PERMANENTLY )
+			self.send_header( 'Location', '/' )
+			self.end_headers()
+			return
+		# Send the web page
+		self.send_response( http.HTTPStatus.OK )
+		self.send_header( 'Content-type', 'text/html; charset=utf-8' )
 		self.end_headers()
-		# Send web page
 		self.wfile.write( bytes( WEBPAGE.format( self.protocol, self.address_string ), 'utf-8' ) )
 	# Define the console log messages
 	def log_message( self, format, *args ) :
-		sys.stderr.write( f'[{self.log_date_time_string()}] - Connexion from {self.address_string} - ({self.protocol})\n' )
+		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.address_string} - ( {self.protocol} )\n' )
 	# Return the client IP address (converted if it is a IPv4 mapped address)
 	@property
 	def address_string( self ) :
