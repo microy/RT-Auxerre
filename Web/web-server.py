@@ -18,18 +18,29 @@ if os.geteuid() != 0 :
 	print( '\n-> Run this application as root (sudo)...')
 	exit()
 
-# Print banner
-print( '\n~~~~~~~~    HTTP(S) Server    ~~~~~~~~~')
-print( 'Press Ctrl+C to stop the application...\n' )
-
 # Simple web page
 WEBPAGE = f'''\
-<html>
-<head><link rel="icon" href="data:," /></head>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:," />
+<title>RT Auxerre Web Server</title>
+</head>
 <body style="font-family:sans-serif;">
-<h1>Bienvenue sur {platform.node()} !!!</h1>
-<p>Vous êtes connectés en {{}}</p>
-<p>Votre adresse est {{}}</p>
+<h1 style="text-align: center;">
+<pre>
+ ____  ____     __   _  _  _  _  ____  ____  ____  ____ 
+(  _ \(_  _)   / _\ / )( \( \/ )(  __)(  _ \(  _ \(  __)
+ )   /  )(    /    \) \/ ( )  (  ) _)  )   / )   / ) _) 
+(__\_) (__)   \_/\_/\____/(_/\_)(____)(__\_)(__\_)(____)
+</pre>
+</h1>
+<br/>
+<br/>
+<p><b>Bienvenue sur la machine :</b> {platform.node()}</p>
+<p><b>Vous êtes connectés en :</b> {{}}</p>
+<p><b>Votre adresse est :</b> {{}}</p>
 </body>
 </html>
 '''
@@ -48,6 +59,9 @@ subprocess.run( SSLCOMMAND.split(), capture_output=True )
 # HTTP Server class to handle IPv6
 class HTTPServer( http.server.HTTPServer ) :
 	address_family = socket.AF_INET6
+	def setup( self ) :
+		# Initialize the class
+		print( self.server_address[0] )
 
 # HTTP request handler class to send a simple web page
 class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
@@ -61,13 +75,14 @@ class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
 			return
 		# Send the web page
 		self.send_response( http.HTTPStatus.OK )
-		self.send_header( 'Content-type', 'text/html; charset=utf-8' )
+		self.send_header( 'Content-type', 'text/html' )
 		self.end_headers()
 		self.wfile.write( bytes( WEBPAGE.format( self.protocol(), self.address_string() ), 'utf-8' ) )
 	# Define the console log messages
 	def log_message( self, format, *args ) :
+		print(self.server.socket.getsockname()[0])
 		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.address_string()} - ( {self.protocol()} )\n' )
-	# Return the client IP address (converted if it is a IPv4 mapped address)
+	# Return the client IP address (converted if it is a IPv4 mapped address ::ffff:)
 	def address_string( self ) :
 		return re.sub( r'^::ffff:', '', self.client_address[0] )
 	# Return the protocol used (HTTP or HTTPS)
@@ -81,6 +96,10 @@ httpd = HTTPServer( ( '::', 80 ), HTTPRequestHandler )
 httpsd = HTTPServer( ( '::', 443 ), HTTPRequestHandler )
 # Wrap the server with TLS
 httpsd.socket = ssl.wrap_socket( httpsd.socket, certfile=CERTFILE.name, keyfile=KEYFILE.name, server_side=True )
+
+# Print banner
+print( '\n~~~~~~~~    HTTP(S) Server    ~~~~~~~~~')
+print( 'Press Ctrl+C to stop the application...\n' )
 
 # Handle exceptions such as Ctrl+C
 try :
