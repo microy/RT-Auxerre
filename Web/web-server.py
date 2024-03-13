@@ -3,7 +3,7 @@
 #
 # Web Server Application (HTTP and HTTPS)
 # https://github.com/microy/rt-auxerre
-# Copyright (c) 2023 Michaël Roy
+# Copyright (c) 2023-2024 Michaël Roy
 # usage : $ sudo ./web-server.py
 #
 
