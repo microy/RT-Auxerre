@@ -8,7 +8,7 @@
 #
 
 # External modules
-import http, http.server
+import http.server
 import os, platform, re, signal, sys, tempfile
 import subprocess, threading
 import socket, ssl
