@@ -8,18 +8,10 @@
 #
 
 # External modules
-import http
-import http.server
-import os
-import platform
-import re
-import signal
-import socket
-import ssl
-import subprocess
-import sys
-import tempfile
-import threading
+import http, http.server
+import os, platform, re, signal, sys, tempfile
+import subprocess, threading
+import socket, ssl
 
 # Check if root
 if os.geteuid() != 0 :
