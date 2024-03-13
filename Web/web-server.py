@@ -71,16 +71,14 @@ class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
 		self.send_response( http.HTTPStatus.OK )
 		self.send_header( 'Content-type', 'text/html; charset=utf-8' )
 		self.end_headers()
-		self.wfile.write( bytes( WEBPAGE.format( self.protocol, self.address_string ), 'utf-8' ) )
+		self.wfile.write( bytes( WEBPAGE.format( self.protocol(), self.address_string() ), 'utf-8' ) )
 	# Define the console log messages
 	def log_message( self, format, *args ) :
-		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.address_string} - ( {self.protocol} )\n' )
+		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.address_string()} - ( {self.protocol()} )\n' )
 	# Return the client IP address (converted if it is a IPv4 mapped address)
-	@property
 	def address_string( self ) :
 		return re.sub( r'^::ffff:', '', self.client_address[0] )
 	# Return the protocol used (HTTP or HTTPS)
-	@property
 	def protocol( self ) :
 		return PROTOCOL[ self.server.server_port ]
 
