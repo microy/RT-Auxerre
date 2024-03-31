@@ -3,11 +3,12 @@
 #
 # Multicast Chat Application using Qt
 # https://github.com/rtauxerre/Multicast
-# Copyright (c) 2022 Michaël Roy
+# Copyright (c) 2023 Michaël Roy
 #
 
 # External dependencies
 import os
+import re
 import socket
 import sys
 from PySide6.QtGui import Qt, QKeySequence, QShortcut
@@ -16,7 +17,7 @@ from PySide6.QtWidgets import QApplication, QLabel, QLineEdit, QTextEdit, QVBoxL
 
 # Multicast address and port
 MULTICAST_ADDRESS4 = '239.0.0.1'
-MULTICAST_ADDRESS6 = 'FF08::b0b'
+MULTICAST_ADDRESS6 = 'FF02::239:0:0:1'
 MULTICAST_PORT = 10000
 
 # Application title
@@ -49,13 +50,14 @@ class QMulticastChat( QWidget ) :
 		self.layout.addWidget( QLabel( 'Send a message :' ) )
 		self.layout.addWidget( self.message )
 		# Server connection to receive messages
-		self.server = QUdpSocket( self )
-		self.server.bind( QHostAddress.Any, MULTICAST_PORT )
-#		self.server.bind( QHostAddress.AnyIPv4, MULTICAST_PORT )
-#		self.server.bind( QHostAddress.AnyIPv6, MULTICAST_PORT )
-#		self.server.joinMulticastGroup( QHostAddress( MULTICAST_ADDRESS4 ) )
-		self.server.joinMulticastGroup( QHostAddress( MULTICAST_ADDRESS6 ) )
-		self.server.readyRead.connect( self.receive_message )
+		self.server4 = QUdpSocket( self )
+		self.server4.bind( QHostAddress.AnyIPv4, MULTICAST_PORT )
+		self.server4.joinMulticastGroup( QHostAddress( MULTICAST_ADDRESS4 ) )
+		self.server4.readyRead.connect( self.receive_message4 )
+		self.server6 = QUdpSocket( self )
+		self.server6.bind( QHostAddress.AnyIPv6, MULTICAST_PORT )
+		self.server6.joinMulticastGroup( QHostAddress( MULTICAST_ADDRESS6 ) )
+		self.server6.readyRead.connect( self.receive_message6 )
 		# Client connection to send messages
 		self.client = QUdpSocket( self )
 	# Send a message
@@ -68,13 +70,25 @@ class QMulticastChat( QWidget ) :
 		# Clear the text input widget
 		self.message.clear()
 	# Receive the messages
-	def receive_message( self ) :
+	def receive_message4( self ) :
 		# Handle all the pending messages
-		while self.server.hasPendingDatagrams() :
+		while self.server4.hasPendingDatagrams() :
 			# Get the message
-			message, host, _ = self.server.readDatagram( self.server.pendingDatagramSize() )
+			message, host, _ = self.server4.readDatagram( self.server4.pendingDatagramSize() )
 			# Print the message
-			self.chat.append( '<b>{} ></b> {}'.format( host.toString(), message.data().decode() ) )
+			self.chat.append( f'<b>{host.toString()} :</b> {message.data().decode()}' )
+	# Receive the messages
+	def receive_message6( self ) :
+		# Handle all the pending messages
+		while self.server6.hasPendingDatagrams() :
+			# Get the message
+			message, host, _ = self.server6.readDatagram( self.server6.pendingDatagramSize() )
+			# Print the message
+			self.chat.append( f'<b>{self.address_string(host.toString())} :</b> {message.data().decode()}' )
+	# Return the IP converted address (remove the interface name) 
+	def address_string( self, address ) :
+		return re.sub( r'%.*', '', address )
+
 
 # Main program
 if __name__ == "__main__" :
