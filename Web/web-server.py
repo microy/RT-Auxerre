@@ -8,10 +8,9 @@
 #
 
 # External modules
-import http.server
+import http.server, socket, ssl
 import os, platform, re, signal, sys, tempfile
 import subprocess, threading
-import socket, ssl
 
 # Check if root
 if os.geteuid() != 0 :
@@ -59,9 +58,6 @@ subprocess.run( SSLCOMMAND.split(), capture_output=True )
 # HTTP Server class to handle IPv6
 class HTTPServer( http.server.HTTPServer ) :
 	address_family = socket.AF_INET6
-	def setup( self ) :
-		# Initialize the class
-		print( self.server_address[0] )
 
 # HTTP request handler class to send a simple web page
 class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
@@ -80,7 +76,6 @@ class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
 		self.wfile.write( bytes( WEBPAGE.format( self.protocol(), self.address_string() ), 'utf-8' ) )
 	# Define the console log messages
 	def log_message( self, format, *args ) :
-		print(self.server.socket.getsockname()[0])
 		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.address_string()} - ( {self.protocol()} )\n' )
 	# Return the client IP address (converted if it is a IPv4 mapped address ::ffff:)
 	def address_string( self ) :
