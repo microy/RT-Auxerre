@@ -22,25 +22,25 @@ WEBPAGE = f'''\
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<link rel="icon" href="data:," />
-<title>RT Auxerre Web Server</title>
+	<meta charset="UTF-8">
+	<link rel="icon" href="data:,"/>
+	<title>RT Auxerre Web Server</title>
 </head>
-<body style="font-family:sans-serif;">
-<h1 style="text-align: center;">
-<pre>
+<body style="font-family: sans-serif;">
+	<h1 style="text-align: center;">
+		<pre>
  ____  ____     __   _  _  _  _  ____  ____  ____  ____ 
 (  _ \(_  _)   / _\ / )( \( \/ )(  __)(  _ \(  _ \(  __)
  )   /  )(    /    \) \/ ( )  (  ) _)  )   / )   / ) _) 
 (__\_) (__)   \_/\_/\____/(_/\_)(____)(__\_)(__\_)(____)
-</pre>
-</h1>
-<br/>
-<br/>
-<p><b>Bienvenue sur la machine :</b> {platform.node()}</p>
-<p><b>L'adresse du serveur est :</b> {{}}</p>
-<p><b>Vous êtes connectés en :</b> {{}}</p>
-<p><b>Votre adresse est :</b> {{}}</p>
+		</pre>
+	</h1>
+	<br/>
+	<br/>
+	<p><b>Bienvenue sur la machine :</b> <code>{platform.node()}</code></p>
+	<p><b>L'adresse du serveur est :</b> <code>{{}}</code></p>
+	<p><b>Vous êtes connectés en :</b> <code>{{}}</code></p>
+	<p><b>Votre adresse est :</b> <code>{{}}</code></p>
 </body>
 </html>
 '''
@@ -48,8 +48,8 @@ WEBPAGE = f'''\
 # Protocol list
 PROTOCOL = { 80 : 'HTTP', 443 : 'HTTPS' }
 
-# Cleanup IP Address
-# If it is a IPv4-mapped to IPv6 address, remove ::ffff:
+# Cleanup an IP Address
+# If it is an IPv4-mapped to IPv6 address, remove ::ffff:
 def CLEANUP_ADDRESS( ip_address ) :
 	return re.sub( r'^::ffff:', '', ip_address )
 
