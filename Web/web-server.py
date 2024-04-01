@@ -37,7 +37,8 @@ WEBPAGE = f'''\
 </h1>
 <br/>
 <br/>
-<p><b>Bienvenue sur le serveur :</b> {{}}</p>
+<p><b>Bienvenue sur la machine :</b> {platform.node()}</p>
+<p><b>L'adresse du serveur est :</b> {{}}</p>
 <p><b>Vous êtes connectés en :</b> {{}}</p>
 <p><b>Votre adresse est :</b> {{}}</p>
 </body>
