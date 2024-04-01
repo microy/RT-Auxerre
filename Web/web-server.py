@@ -48,6 +48,11 @@ WEBPAGE = f'''\
 # Protocol list
 PROTOCOL = { 80 : 'HTTP', 443 : 'HTTPS' }
 
+# Cleanup IP Address
+# If it is a IPv4-mapped to IPv6 address, remove ::ffff:
+def CLEANUP_ADDRESS( ip_address ) :
+	return re.sub( r'^::ffff:', '', ip_address )
+
 # Generate temporary files for the server TLS certificate and key
 CERTFILE = tempfile.NamedTemporaryFile()
 KEYFILE = tempfile.NamedTemporaryFile()
@@ -78,12 +83,12 @@ class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
 	# Define the console log messages
 	def log_message( self, format, *args ) :
 		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.client_ip_address()} - ( {self.protocol()} )\n' )
-	# Return the server IP address (converted if it is a IPv4 mapped address ::ffff:)
+	# Return the server IP address
 	def server_ip_address( self ) :
-		return re.sub( r'^::ffff:', '', self.connection.getsockname()[0] )
-	# Return the client IP address (converted if it is a IPv4 mapped address ::ffff:)
+		return CLEANUP_ADDRESS( self.connection.getsockname()[0] )
+	# Return the client IP address
 	def client_ip_address( self ) :
-		return re.sub( r'^::ffff:', '', self.client_address[0] )
+		return CLEANUP_ADDRESS( self.client_address[0] )
 	# Return the protocol used (HTTP or HTTPS)
 	def protocol( self ) :
 		return PROTOCOL[ self.server.server_port ]
