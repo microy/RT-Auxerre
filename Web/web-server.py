@@ -37,7 +37,7 @@ WEBPAGE = f'''\
 </h1>
 <br/>
 <br/>
-<p><b>Bienvenue sur la machine :</b> {platform.node()}</p>
+<p><b>Bienvenue sur le serveur :</b> {{}}</p>
 <p><b>Vous êtes connectés en :</b> {{}}</p>
 <p><b>Votre adresse est :</b> {{}}</p>
 </body>
@@ -73,12 +73,15 @@ class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
 		self.send_response( http.HTTPStatus.OK )
 		self.send_header( 'Content-type', 'text/html' )
 		self.end_headers()
-		self.wfile.write( bytes( WEBPAGE.format( self.protocol(), self.address_string() ), 'utf-8' ) )
+		self.wfile.write( bytes( WEBPAGE.format( self.server_ip_address(), self.protocol(), self.client_ip_address() ), 'utf-8' ) )
 	# Define the console log messages
 	def log_message( self, format, *args ) :
-		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.address_string()} - ( {self.protocol()} )\n' )
+		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.client_ip_address()} - ( {self.protocol()} )\n' )
+	# Return the server IP address (converted if it is a IPv4 mapped address ::ffff:)
+	def server_ip_address( self ) :
+		return re.sub( r'^::ffff:', '', self.connection.getsockname()[0] )
 	# Return the client IP address (converted if it is a IPv4 mapped address ::ffff:)
-	def address_string( self ) :
+	def client_ip_address( self ) :
 		return re.sub( r'^::ffff:', '', self.client_address[0] )
 	# Return the protocol used (HTTP or HTTPS)
 	def protocol( self ) :
