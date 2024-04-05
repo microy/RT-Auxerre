@@ -76,7 +76,7 @@ class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
 			self.end_headers()
 			return None
 		# Get server IP address
-		server_external_ip_address = re.match( r'^Host: (\[)?(.*)(?(1)\])', self.headers.as_string() )[2]
+		server_external_ip_address = re.match( r'^Host: (\[)?(.*)(?(1)\])', self.headers.as_string() ).group( 2 )
 		server_ip_address = CLEANUP_ADDRESS( self.connection.getsockname()[0] )
 		if server_ip_address != server_external_ip_address :
 			server_ip_address = server_ip_address + f' ({server_external_ip_address})'
