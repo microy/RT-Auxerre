@@ -74,24 +74,25 @@ class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
 			self.send_response( http.HTTPStatus.MOVED_PERMANENTLY )
 			self.send_header( 'Location', '/' )
 			self.end_headers()
-			return
+			return None
+		# Get server IP address
+		server_external_ip_address = re.match( r'^Host: (.*)', self.headers.as_string() )[1]
+		server_external_ip_address = re.sub( r'[\[\]]', '', server_external_ip_address )
+		server_ip_address = CLEANUP_ADDRESS( self.connection.getsockname()[0] )
+		if server_ip_address != server_external_ip_address :
+			server_ip_address = server_ip_address + f' ({server_external_ip_address})'
+		# Get client IP address
+		self.client_ip_address = CLEANUP_ADDRESS( self.client_address[0] )
+		# Get Web protocol
+		self.web_protocol = PROTOCOL[ self.server.server_port ]
 		# Send the web page
 		self.send_response( http.HTTPStatus.OK )
 		self.send_header( 'Content-type', 'text/html' )
 		self.end_headers()
-		self.wfile.write( bytes( WEBPAGE.format( self.server_ip_address(), self.protocol(), self.client_ip_address() ), 'utf-8' ) )
+		self.wfile.write( bytes( WEBPAGE.format( server_ip_address, self.web_protocol, self.client_ip_address ), 'utf-8' ) )
 	# Define the console log messages
 	def log_message( self, format, *args ) :
-		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.client_ip_address()} - ( {self.protocol()} )\n' )
-	# Return the server IP address
-	def server_ip_address( self ) :
-		return CLEANUP_ADDRESS( self.connection.getsockname()[0] )
-	# Return the client IP address
-	def client_ip_address( self ) :
-		return CLEANUP_ADDRESS( self.client_address[0] )
-	# Return the protocol used (HTTP or HTTPS)
-	def protocol( self ) :
-		return PROTOCOL[ self.server.server_port ]
+		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.client_ip_address} - ( {self.web_protocol} )\n' )
 
 # Create the HTTP server
 httpd = HTTPServer( ( '::', 80 ), HTTPRequestHandler )
