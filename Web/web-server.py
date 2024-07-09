@@ -99,7 +99,9 @@ httpd = HTTPServer( ( '::', 80 ), HTTPRequestHandler )
 # Create the HTTPS server
 httpsd = HTTPServer( ( '::', 443 ), HTTPRequestHandler )
 # Wrap the server with TLS
-httpsd.socket = ssl.wrap_socket( httpsd.socket, certfile=CERTFILE.name, keyfile=KEYFILE.name, server_side=True )
+ssl_context = ssl.SSLContext( ssl.PROTOCOL_TLS_SERVER )
+ssl_context.load_cert_chain( certfile=CERTFILE.name, keyfile=KEYFILE.name )
+httpsd.socket = ssl_context.wrap_socket( httpsd.socket, server_side=True )
 
 # Print banner
 print( '\n~~~~~~~~    HTTP(S) Server    ~~~~~~~~~')
