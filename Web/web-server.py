@@ -18,7 +18,7 @@ if os.geteuid() != 0 :
 	exit()
 
 # Simple web page
-WEBPAGE = f'''\
+WEBPAGE = rf'''\
 <!DOCTYPE html>
 <html lang="fr">
 <head>
