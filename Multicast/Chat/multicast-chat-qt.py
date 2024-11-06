@@ -3,7 +3,7 @@
 #
 # Multicast Chat Application using Qt
 # https://github.com/rtauxerre/Multicast
-# Copyright (c) 2023 Michaël Roy
+# Copyright (c) 2024 Michaël Roy
 #
 
 # External dependencies
@@ -13,7 +13,7 @@ import socket
 import sys
 from PySide6.QtGui import Qt, QKeySequence, QShortcut
 from PySide6.QtNetwork import QHostAddress, QUdpSocket, QNetworkInterface
-from PySide6.QtWidgets import QApplication, QLabel, QLineEdit, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit, QRadioButton, QTextEdit, QVBoxLayout, QWidget
 
 # Multicast address and port
 MULTICAST_ADDRESS4 = '239.0.0.1'
@@ -49,6 +49,15 @@ class QMulticastChat( QWidget ) :
 		self.layout.addWidget( self.chat )
 		self.layout.addWidget( QLabel( 'Send a message :' ) )
 		self.layout.addWidget( self.message )
+		self.protocols = QHBoxLayout()
+		self.button_ipv4 = QRadioButton("IPv4")
+		self.button_ipv4.setChecked( True )
+		self.button_ipv6 = QRadioButton("IPv6")
+		self.protocols.addWidget( self.button_ipv4 )
+		self.protocols.addSpacing( 15 )
+		self.protocols.addWidget( self.button_ipv6 )
+		self.protocols.addStretch()
+		self.layout.addLayout( self.protocols )
 		# Server connection to receive messages
 		self.server4 = QUdpSocket( self )
 		self.server4.bind( QHostAddress.AnyIPv4, MULTICAST_PORT )
@@ -64,9 +73,12 @@ class QMulticastChat( QWidget ) :
 	def send_message( self ) :
 		# Return if the message is empty
 		if not self.message.text() : return
-		# Send the message through the network
-#		self.client.writeDatagram( self.message.text().encode(), QHostAddress( MULTICAST_ADDRESS4 ), MULTICAST_PORT )
-		self.client.writeDatagram( self.message.text().encode(), QHostAddress( MULTICAST_ADDRESS6 ), MULTICAST_PORT )
+		# Send the message through the IPv4 network
+		if self.button_ipv4.isChecked() :
+			self.client.writeDatagram( self.message.text().encode(), QHostAddress( MULTICAST_ADDRESS4 ), MULTICAST_PORT )
+		# Or send the message through the IPv6 network
+		else :
+			self.client.writeDatagram( self.message.text().encode(), QHostAddress( MULTICAST_ADDRESS6 ), MULTICAST_PORT )
 		# Clear the text input widget
 		self.message.clear()
 	# Receive the messages
