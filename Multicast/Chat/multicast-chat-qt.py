@@ -7,17 +7,16 @@
 #
 
 # External dependencies
-import os
 import re
 import socket
 import sys
 from PySide6.QtGui import Qt, QKeySequence, QShortcut
-from PySide6.QtNetwork import QHostAddress, QUdpSocket, QNetworkInterface
+from PySide6.QtNetwork import QHostAddress, QUdpSocket
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit, QRadioButton, QTextEdit, QVBoxLayout, QWidget
 
-# Multicast address and port
-MULTICAST_ADDRESS4 = '239.0.0.1'
-MULTICAST_ADDRESS6 = 'FF02::239:0:0:1'
+# Multicast addresses and port
+MULTICAST_ADDRESS4 = QHostAddress( '239.0.0.1' )
+MULTICAST_ADDRESS6 = QHostAddress( 'FF02::239:0:0:1' )
 MULTICAST_PORT = 10000
 
 # Application title
@@ -47,25 +46,25 @@ class QMulticastChat( QWidget ) :
 		self.layout = QVBoxLayout( self )
 		self.layout.addWidget( QLabel( 'Message received :' ) )
 		self.layout.addWidget( self.chat )
-		self.layout.addWidget( QLabel( 'Send a message :' ) )
-		self.layout.addWidget( self.message )
-		self.protocols = QHBoxLayout()
+		protocols = QHBoxLayout()
+		protocols.addWidget( QLabel( 'Send a message :' ) )
+		protocols.addStretch()
 		self.button_ipv4 = QRadioButton("IPv4")
 		self.button_ipv4.setChecked( True )
-		self.button_ipv6 = QRadioButton("IPv6")
-		self.protocols.addWidget( self.button_ipv4 )
-		self.protocols.addSpacing( 15 )
-		self.protocols.addWidget( self.button_ipv6 )
-		self.protocols.addStretch()
-		self.layout.addLayout( self.protocols )
-		# Server connection to receive messages
+		protocols.addWidget( self.button_ipv4 )
+		protocols.addWidget( QRadioButton("IPv6") )
+		self.layout.addLayout( protocols )
+		self.layout.addWidget( self.message )
+		self.message.setFocus()
+		# Server connection to receive messages via IPv4
 		self.server4 = QUdpSocket( self )
 		self.server4.bind( QHostAddress.AnyIPv4, MULTICAST_PORT )
-		self.server4.joinMulticastGroup( QHostAddress( MULTICAST_ADDRESS4 ) )
+		self.server4.joinMulticastGroup( MULTICAST_ADDRESS4 )
 		self.server4.readyRead.connect( self.receive_message4 )
+		# Server connection to receive messages via IPv6
 		self.server6 = QUdpSocket( self )
 		self.server6.bind( QHostAddress.AnyIPv6, MULTICAST_PORT )
-		self.server6.joinMulticastGroup( QHostAddress( MULTICAST_ADDRESS6 ) )
+		self.server6.joinMulticastGroup( MULTICAST_ADDRESS6 )
 		self.server6.readyRead.connect( self.receive_message6 )
 		# Client connection to send messages
 		self.client = QUdpSocket( self )
@@ -75,10 +74,10 @@ class QMulticastChat( QWidget ) :
 		if not self.message.text() : return
 		# Send the message through the IPv4 network
 		if self.button_ipv4.isChecked() :
-			self.client.writeDatagram( self.message.text().encode(), QHostAddress( MULTICAST_ADDRESS4 ), MULTICAST_PORT )
+			self.client.writeDatagram( self.message.text().encode(), MULTICAST_ADDRESS4, MULTICAST_PORT )
 		# Or send the message through the IPv6 network
 		else :
-			self.client.writeDatagram( self.message.text().encode(), QHostAddress( MULTICAST_ADDRESS6 ), MULTICAST_PORT )
+			self.client.writeDatagram( self.message.text().encode(), MULTICAST_ADDRESS6, MULTICAST_PORT )
 		# Clear the text input widget
 		self.message.clear()
 	# Receive the messages
@@ -100,7 +99,6 @@ class QMulticastChat( QWidget ) :
 	# Return the IP converted address (remove the interface name) 
 	def address_string( self, address ) :
 		return re.sub( r'%.*', '', address )
-
 
 # Main program
 if __name__ == "__main__" :
