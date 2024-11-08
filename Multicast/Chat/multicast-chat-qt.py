@@ -20,6 +20,10 @@ MULTICAST_PORT = 10000
 # Application title
 APP_TITLE = 'RT Auxerre Multicast Chat'
 
+# Cleanup an IPv6 Address (remove the interface name)
+def CLEANUP_ADDRESS( ip_address ) :
+	return re.sub( r'%.*', '', ip_address )
+
 # Multicast Chat using Qt
 class QMulticastChat( QWidget ) :
 	# Initialize the window
@@ -102,10 +106,7 @@ class QMulticastChat( QWidget ) :
 			if self.secret.isChecked() : msg = codecs.decode( message.data().decode(), 'rot_13' )
 			else : msg = message.data().decode()
 			# Print the message
-			self.chat.append( f'<b>{self.address_string(host.toString())} :</b> {msg}' )
-	# Return the IP converted address (remove the interface name) 
-	def address_string( self, address ) :
-		return re.sub( r'%.*', '', address )
+			self.chat.append( f'<b>{CLEANUP_ADDRESS(host.toString())} :</b> {msg}' )
 
 # Main program
 if __name__ == "__main__" :
