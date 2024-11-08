@@ -8,15 +8,14 @@
 #
 
 #
-# Required external dependencies :
-#   python-pyftpdlib
-#   python-pyopenssl
+# Required external dependency :
+#	python-pyftpdlib (Arch) or python3-pyftpdlib (Ubuntu)
 #
 
 # External modules
-import os, subprocess, tempfile
+import os, tempfile
 from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.handlers import FTPHandler, TLS_FTPHandler
+from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
 
 # Check if root
@@ -32,22 +31,12 @@ with open( FTP_DIRECTORY.name + '/hello.txt', 'w' ) as f :
 	f.write( 'Bienvenue sur le serveur FTP RT Auxerre !\n' )
 	f.close()
 
-# Generate temporary files for the server TLS certificate and key
-CERTFILE = tempfile.NamedTemporaryFile()
-KEYFILE = tempfile.NamedTemporaryFile()
-
-# Generate a TLS certificate and key
-SSLCOMMAND = f'openssl req -x509 -newkey rsa:2048 -nodes -days 365 -out {CERTFILE.name} -keyout {KEYFILE.name} -subj /CN=rt-auxerre.fr'
-subprocess.run( SSLCOMMAND.split(), capture_output=True )
-
 # Instantiate a dummy authorizer for managing 'anonymous' users
 authorizer = DummyAuthorizer()
 authorizer.add_anonymous( FTP_DIRECTORY.name )
 
 # Instantiate FTP handler class with TLS support
-handler = TLS_FTPHandler
-handler.certfile = CERTFILE.name
-handler.keyfile = KEYFILE.name
+handler = FTPHandler
 handler.authorizer = authorizer
 handler.banner = 'RT Auxerre FTP Server'
 
