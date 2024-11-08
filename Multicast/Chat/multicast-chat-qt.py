@@ -7,12 +7,10 @@
 #
 
 # External dependencies
-import re
-import socket
-import sys
+import codecs, re, socket, sys
 from PySide6.QtGui import Qt, QKeySequence, QShortcut
 from PySide6.QtNetwork import QHostAddress, QUdpSocket
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit, QRadioButton, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QCheckBox, QHBoxLayout, QLabel, QLineEdit, QRadioButton, QTextEdit, QVBoxLayout, QWidget
 
 # Multicast addresses and port
 MULTICAST_ADDRESS4 = QHostAddress( '239.0.0.1' )
@@ -53,6 +51,9 @@ class QMulticastChat( QWidget ) :
 		self.button_ipv4.setChecked( True )
 		protocols.addWidget( self.button_ipv4 )
 		protocols.addWidget( QRadioButton("IPv6") )
+		protocols.addStretch()
+		self.secret = QCheckBox( 'Secret' )
+		protocols.addWidget( self.secret )
 		self.layout.addLayout( protocols )
 		self.layout.addWidget( self.message )
 		self.message.setFocus()
@@ -72,12 +73,12 @@ class QMulticastChat( QWidget ) :
 	def send_message( self ) :
 		# Return if the message is empty
 		if not self.message.text() : return
-		# Send the message through the IPv4 network
-		if self.button_ipv4.isChecked() :
-			self.client.writeDatagram( self.message.text().encode(), MULTICAST_ADDRESS4, MULTICAST_PORT )
-		# Or send the message through the IPv6 network
-		else :
-			self.client.writeDatagram( self.message.text().encode(), MULTICAST_ADDRESS6, MULTICAST_PORT )
+		# Encode the message
+		if self.secret.isChecked() : msg = codecs.encode( self.message.text(), 'rot_13' ).encode()
+		else : msg = self.message.text().encode()
+		# Send the message through the IPv4 or IPv6 network
+		if self.button_ipv4.isChecked() : self.client.writeDatagram( msg, MULTICAST_ADDRESS4, MULTICAST_PORT )
+		else : self.client.writeDatagram( msg, MULTICAST_ADDRESS6, MULTICAST_PORT )
 		# Clear the text input widget
 		self.message.clear()
 	# Receive the messages
@@ -86,16 +87,22 @@ class QMulticastChat( QWidget ) :
 		while self.server4.hasPendingDatagrams() :
 			# Get the message
 			message, host, _ = self.server4.readDatagram( self.server4.pendingDatagramSize() )
+			# Decode the message
+			if self.secret.isChecked() : msg = codecs.decode( message.data().decode(), 'rot_13' )
+			else : msg = message.data().decode()
 			# Print the message
-			self.chat.append( f'<b>{host.toString()} :</b> {message.data().decode()}' )
+			self.chat.append( f'<b>{host.toString()} :</b> {msg}' )
 	# Receive the messages
 	def receive_message6( self ) :
 		# Handle all the pending messages
 		while self.server6.hasPendingDatagrams() :
 			# Get the message
 			message, host, _ = self.server6.readDatagram( self.server6.pendingDatagramSize() )
+			# Decode the message
+			if self.secret.isChecked() : msg = codecs.decode( message.data().decode(), 'rot_13' )
+			else : msg = message.data().decode()
 			# Print the message
-			self.chat.append( f'<b>{self.address_string(host.toString())} :</b> {message.data().decode()}' )
+			self.chat.append( f'<b>{self.address_string(host.toString())} :</b> {msg}' )
 	# Return the IP converted address (remove the interface name) 
 	def address_string( self, address ) :
 		return re.sub( r'%.*', '', address )
