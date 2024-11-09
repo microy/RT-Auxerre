@@ -7,7 +7,7 @@
 #
 
 # External dependencies
-import codecs, re, socket, sys
+import base64, re, socket, sys
 from PySide6.QtGui import Qt, QKeySequence, QShortcut
 from PySide6.QtNetwork import QHostAddress, QUdpSocket
 from PySide6.QtWidgets import QApplication, QCheckBox, QHBoxLayout, QLabel, QLineEdit, QRadioButton, QTextEdit, QVBoxLayout, QWidget
@@ -78,7 +78,7 @@ class QMulticastChat( QWidget ) :
 		# Return if the message is empty
 		if not self.message.text() : return
 		# Encode the message
-		if self.secret.isChecked() : msg = codecs.encode( self.message.text(), 'rot_13' ).encode()
+		if self.secret.isChecked() : msg = base64.b64encode( self.message.text().encode() )
 		else : msg = self.message.text().encode()
 		# Send the message through the IPv4 or IPv6 network
 		if self.button_ipv4.isChecked() : self.client.writeDatagram( msg, MULTICAST_ADDRESS4, MULTICAST_PORT )
@@ -92,7 +92,7 @@ class QMulticastChat( QWidget ) :
 			# Get the message
 			message, host, _ = self.server4.readDatagram( self.server4.pendingDatagramSize() )
 			# Decode the message
-			if self.secret.isChecked() : msg = codecs.decode( message.data().decode(), 'rot_13' )
+			if self.secret.isChecked() : msg = base64.b64decode( message.data() ).decode()
 			else : msg = message.data().decode()
 			# Print the message
 			self.chat.append( f'<b>{host.toString()} :</b> {msg}' )
@@ -103,7 +103,7 @@ class QMulticastChat( QWidget ) :
 			# Get the message
 			message, host, _ = self.server6.readDatagram( self.server6.pendingDatagramSize() )
 			# Decode the message
-			if self.secret.isChecked() : msg = codecs.decode( message.data().decode(), 'rot_13' )
+			if self.secret.isChecked() : msg = base64.b64decode( message.data() ).decode()
 			else : msg = message.data().decode()
 			# Print the message
 			self.chat.append( f'<b>{CLEANUP_ADDRESS(host.toString())} :</b> {msg}' )
