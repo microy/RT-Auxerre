@@ -2,7 +2,7 @@
 
 #
 # Multicast Chat Application using Qt
-# https://github.com/rtauxerre/Multicast
+# https://github.com/microy/RT-Auxerre
 # Copyright (c) 2024 Michaël Roy
 #
 
@@ -17,13 +17,6 @@ MULTICAST_ADDRESS4 = QHostAddress( '239.0.0.1' )
 MULTICAST_ADDRESS6 = QHostAddress( 'FF02::239:0:0:1' )
 MULTICAST_PORT = 10000
 
-# Application title
-APP_TITLE = 'RT Auxerre Multicast Chat'
-
-# Cleanup an IPv6 Address (remove the interface name)
-def CLEANUP_ADDRESS( ip_address ) :
-	return re.sub( r'%.*', '', ip_address )
-
 # Multicast Chat using Qt
 class QMulticastChat( QWidget ) :
 	# Initialize the window
@@ -31,7 +24,7 @@ class QMulticastChat( QWidget ) :
 		# Initialize the class
 		QWidget.__init__( self )
 		# Set the window title
-		self.setWindowTitle( APP_TITLE )
+		self.setWindowTitle( 'RT Auxerre Multicast Chat' )
 		# Set fixed window size
 		self.setFixedWidth( 800 )
 		self.setFixedHeight( 600 )
@@ -105,15 +98,13 @@ class QMulticastChat( QWidget ) :
 			# Decode the message
 			if self.secret.isChecked() : msg = base64.b64decode( message.data() ).decode()
 			else : msg = message.data().decode()
+			# Cleanup the address
+			address = re.sub( r'%.*', '', host.toString() )
 			# Print the message
-			self.chat.append( f'<b>{CLEANUP_ADDRESS(host.toString())} :</b> {msg}' )
+			self.chat.append( f'<b>{address} :</b> {msg}' )
 
 # Main program
 if __name__ == "__main__" :
-	# Detect IPv6
-	if not socket.has_dualstack_ipv6() :
-		print( 'IPv6 not detected. Program terminated !')
-		exit()
 	# Start the Qt application
 	application = QApplication( sys.argv )
 	window = QMulticastChat()
