@@ -20,7 +20,7 @@ MULTICAST_PORT = 10000
 # Chat server protocol
 class ChatProtocol :
 	# Initialisation
-	def __init__( self, message_callback = None ) :
+	def __init__( self, message_callback ) :
 		# Register the message callback from the application
 		self.message_callback = message_callback
 	# Socket initialisation
