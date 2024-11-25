@@ -30,7 +30,7 @@ FTP_MESSAGE = rf'Bienvenue sur le serveur FTP RT Auxerre de la machine {platform
 FTP_DIRECTORY = tempfile.TemporaryDirectory()
 
 # Create a temporary text file as an example
-with open( FTP_DIRECTORY.name + '/hello.txt', 'w' ) as f :
+with open( f'{FTP_DIRECTORY.name}/hello.txt', 'w' ) as f :
 	f.write( FTP_MESSAGE + '\n' )
 
 # Instantiate a dummy authorizer for managing 'anonymous' users
