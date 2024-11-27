@@ -44,8 +44,10 @@ class ChatApp( App ) :
 	]
 	# Application style sheet
 	CSS = '''
-		#header {
+		* {
 			background: #212223;
+		}
+		#header {
 			height: 3;
 			text-style: bold;
 			content-align: center middle;
@@ -60,14 +62,18 @@ class ChatApp( App ) :
 			height: 5;
 			padding: 1 2 1 2;
 		}
-		#footer {
-			background: #212223;
+		#input:focus {
+			background-tint: #212223;
+		}
+		#input>.input--cursor {
+			color: white;
+			text-style: reverse;
 		}
 		.border {
-			background: #212223;
 			border: round white;
 			border-title-style: bold;
-	}'''
+		}
+	'''
 	# Compose the interface
 	def compose( self ) :
 		yield Static( 'RT Auxerre Multicast Chat', id='header' )
