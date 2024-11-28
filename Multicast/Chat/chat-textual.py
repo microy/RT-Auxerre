@@ -44,15 +44,15 @@ class ChatApp( App ) :
 	]
 	# Application style sheet
 	CSS = '''
-		* {
+		#footer, #header, .border {
 			background: #212223;
+			background-tint: #212223;
+			color: white;
 		}
 		#header {
+			content-align: center middle;
 			height: 3;
 			text-style: bold;
-			content-align: center middle;
-			width: 100%;
-			color: white;
 		}
 		#messages {
 			height: 1fr;
@@ -61,13 +61,6 @@ class ChatApp( App ) :
 		#input {
 			height: 5;
 			padding: 1 2 1 2;
-		}
-		#input:focus {
-			background-tint: #212223;
-		}
-		#input>.input--cursor {
-			color: white;
-			text-style: reverse;
 		}
 		.border {
 			border: round white;
