@@ -31,8 +31,8 @@ class ChatProtocol :
 		# Send the message to the application
 		self.message_callback( message, address )
 
-# Chat application
-class ChatApp( App ) :
+# Multicast Chat using Textual
+class TMulticastChat( App ) :
 	# Auto focus
 	AUTO_FOCUS = '#input'
 	# Keyboard bindings
@@ -123,5 +123,5 @@ class ChatApp( App ) :
 
 # Main application
 if __name__ == "__main__" :
-	app = ChatApp()
+	app = TMulticastChat()
 	app.run()
