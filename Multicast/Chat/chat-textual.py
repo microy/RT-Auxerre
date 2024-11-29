@@ -82,6 +82,7 @@ class TMulticastChat( App ) :
 	# Initialize the application
 	async def on_mount( self ) :
 		# Setup the interface
+		self.use_command_palette = False
 		self.query_one( '#messages' ).border_title = 'Message received'
 		self.query_one( '#messages' ).can_focus = False
 		self.query_one( '#input' ).border_title='Send a message'
