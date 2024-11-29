@@ -116,8 +116,8 @@ class ChatApp( App ) :
 	# Receive a message
 	def ReceiveMessage( self, message, address ) :
 		# Decode the message
-		if self.secret_enabled : message = base64.b64decode( message ).decode()
-		else : message = message.decode()
+		if self.secret_enabled : message = base64.b64decode( message )
+		message = message.decode()
 		# Append the message to the chat history
 		self.query_one( '#messages' ).write( f'[b]{address} >[/b] {message}' )
 
