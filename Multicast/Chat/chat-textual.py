@@ -1,5 +1,11 @@
 #! /usr/bin/env python3
 
+#
+# Multicast Chat Application using Textual
+# https://github.com/microy/RT-Auxerre
+# Copyright (c) 2024 Michaël Roy
+#
+
 # External dependencies
 import asyncio, base64, re, socket
 from textual.app import App
