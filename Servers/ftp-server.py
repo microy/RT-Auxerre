@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 #
-# FTP Server Application with TLS support
+# FTP Server Application
 # https://github.com/microy/rt-auxerre
 # Copyright (c) 2024 Michaël Roy
 # usage : $ sudo ./ftp-server.py
@@ -31,7 +31,7 @@ FTP_DIRECTORY = tempfile.TemporaryDirectory()
 
 # Create a temporary text file as an example
 with open( f'{FTP_DIRECTORY.name}/hello.txt', 'w' ) as f :
-	f.write( FTP_MESSAGE + '\n' )
+	f.write( f'{FTP_MESSAGE}\n' )
 
 # Instantiate a dummy authorizer for managing 'anonymous' users
 authorizer = DummyAuthorizer()
