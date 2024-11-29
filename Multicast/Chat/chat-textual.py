@@ -73,16 +73,17 @@ class TMulticastChat( App ) :
 			border-title-style: bold;
 		}
 	'''
+	# Disable command palette
+	ENABLE_COMMAND_PALETTE = False
 	# Compose the interface
 	def compose( self ) :
 		yield Static( 'RT Auxerre Multicast Chat', id='header' )
 		yield RichLog( markup=True, wrap=True, classes="border", id='messages' )
 		yield Input( classes="border", id='input' )
-		yield Footer( show_command_palette=False, id='footer' )
+		yield Footer( id='footer' )
 	# Initialize the application
 	async def on_mount( self ) :
 		# Setup the interface
-		self.use_command_palette = False
 		self.query_one( '#messages' ).border_title = 'Message received'
 		self.query_one( '#messages' ).can_focus = False
 		self.query_one( '#input' ).border_title='Send a message'
