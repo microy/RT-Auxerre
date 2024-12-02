@@ -7,8 +7,7 @@
 #
 
 # External dependencies
-import asyncio, base64, re, socket, sys
-from threading import Thread
+import asyncio, base64, re, socket, sys, threading
 from PySide6.QtGui import Qt, QKeySequence, QShortcut
 from PySide6.QtWidgets import QApplication, QCheckBox, QHBoxLayout, QLabel, QLineEdit, QRadioButton, QTextEdit, QVBoxLayout, QWidget
 
@@ -26,10 +25,10 @@ class ChatProtocol :
 	# Socket initialisation
 	def connection_made( self, transport ) :
 		# Register the IPv4 multicast group
-		transport.get_extra_info('socket').setsockopt( socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
+		transport.get_extra_info( 'socket' ).setsockopt( socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
 			socket.inet_aton( MULTICAST_ADDRESS4 ) + socket.inet_aton( '0.0.0.0' ) )
 		# Register the IPv6 multicast group
-		transport.get_extra_info('socket').setsockopt( socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP,
+		transport.get_extra_info( 'socket' ).setsockopt( socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP,
 			socket.inet_pton( socket.AF_INET6, MULTICAST_ADDRESS6 ) + socket.inet_pton( socket.AF_INET6, '::' ) )
 	# Message reception
 	def datagram_received( self, message, address ) :
@@ -63,10 +62,10 @@ class QMulticastChat( QWidget ) :
 		protocols = QHBoxLayout()
 		protocols.addWidget( QLabel( 'Send a message :' ) )
 		protocols.addStretch()
-		self.button_ipv4 = QRadioButton("IPv4")
+		self.button_ipv4 = QRadioButton( 'IPv4' )
 		self.button_ipv4.setChecked( True )
 		protocols.addWidget( self.button_ipv4 )
-		protocols.addWidget( QRadioButton("IPv6") )
+		protocols.addWidget( QRadioButton( 'IPv6' ) )
 		protocols.addStretch()
 		self.secret = QCheckBox( 'Secret' )
 		protocols.addWidget( self.secret )
@@ -81,7 +80,7 @@ class QMulticastChat( QWidget ) :
 		# Run asyncio loop in another thread
 		loop = asyncio.new_event_loop()
 		asyncio.set_event_loop( loop )
-		Thread( target = loop.run_forever, daemon = True ).start()
+		threading.Thread( target = loop.run_forever, daemon = True ).start()
 		# Run server in asyncio loop
 		asyncio.run_coroutine_threadsafe( self.RunServer(), loop = loop )
 	# Run server
