@@ -7,7 +7,7 @@
 #
 
 # External dependencies
-import asyncio, base64, re, socket
+import asyncio, base64, logging, re, socket
 from textual.app import App
 from textual.widgets import Footer, Input, RichLog, Static
 
@@ -15,6 +15,10 @@ from textual.widgets import Footer, Input, RichLog, Static
 MULTICAST_ADDRESS4 = '239.0.0.1'
 MULTICAST_ADDRESS6 = 'FF02::239:0:0:1'
 MULTICAST_PORT = 10000
+
+# Logging
+logger = logging.getLogger()
+logging.basicConfig( filename='/tmp/chat.log', level=logging.INFO, format='[ %(asctime)s ] ( %(module)s ) %(message)s' )
 
 # Chat server protocol
 class ChatProtocol :
@@ -128,6 +132,8 @@ class TMulticastChat( App ) :
 		message = message.decode()
 		# Append the message to the chat history
 		self.query_one( '#messages' ).write( f'[b]{address} >[/b] {message}' )
+		# Log the message
+		logger.info( f'{address} > {message}' )
 
 # Main application
 if __name__ == "__main__" :

@@ -7,7 +7,7 @@
 #
 
 # External dependencies
-import asyncio, base64, re, socket, sys, threading
+import asyncio, base64, logging, re, socket, sys, threading
 from PySide6.QtGui import Qt, QKeySequence, QShortcut
 from PySide6.QtWidgets import QApplication, QCheckBox, QHBoxLayout, QLabel, QLineEdit, QRadioButton, QTextEdit, QVBoxLayout, QWidget
 
@@ -15,6 +15,10 @@ from PySide6.QtWidgets import QApplication, QCheckBox, QHBoxLayout, QLabel, QLin
 MULTICAST_ADDRESS4 = '239.0.0.1'
 MULTICAST_ADDRESS6 = 'FF02::239:0:0:1'
 MULTICAST_PORT = 10000
+
+# Logging
+logger = logging.getLogger()
+logging.basicConfig( filename='/tmp/chat.log', level=logging.INFO, format='[ %(asctime)s ] ( %(module)s ) %(message)s' )
 
 # Chat server protocol
 class ChatProtocol :
@@ -107,6 +111,8 @@ class QMulticastChat( QWidget ) :
 		message = message.decode()
 		# Append the message to the chat history
 		self.chat.append( f'<b>{address} ></b> {message}' )
+		# Log the message
+		logger.info( f'{address} > {message}' )
 
 # Main program
 if __name__ == "__main__" :
