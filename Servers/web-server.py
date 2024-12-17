@@ -27,6 +27,7 @@ WEBPAGE = rf'''
 	<title>RT Auxerre Web Server</title>
 </head>
 <body style="font-family: sans-serif;">
+	<br/>
 	<h1 style="text-align: center;">
 🇷​​​​​🇹​​​​​ 🇦​​​​​🇺​​​​​🇽​​​​​🇪​​​​​🇷​​​​​🇷​​​​​🇪​​​​​
 	</h1>
@@ -64,21 +65,21 @@ class HTTPServer( http.server.HTTPServer ) :
 class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
 	# Handle GET request
 	def do_GET( self ) :
+		# Get server IP address
+		server_external_ip_address = re.match( r'^Host: (\[)?(.*)(?(1)\])', self.headers.as_string() ).group( 2 )
+		server_ip_address = CLEANUP_ADDRESS( self.connection.getsockname()[0] )
+		if server_ip_address != server_external_ip_address :
+			server_ip_address = f'{server_ip_address} ({server_external_ip_address})'
+		# Get client IP address
+		self.client_ip_address = CLEANUP_ADDRESS( self.client_address[0] )
+		# Get Web protocol
+		self.web_protocol = PROTOCOL[ self.server.server_port ]
 		# Redirect if necessary
 		if self.path != '/' :
 			self.send_response( http.HTTPStatus.MOVED_PERMANENTLY )
 			self.send_header( 'Location', '/' )
 			self.end_headers()
 			return None
-		# Get server IP address
-		server_external_ip_address = re.match( r'^Host: (\[)?(.*)(?(1)\])', self.headers.as_string() ).group( 2 )
-		server_ip_address = CLEANUP_ADDRESS( self.connection.getsockname()[0] )
-		if server_ip_address != server_external_ip_address :
-			server_ip_address = server_ip_address + f' ({server_external_ip_address})'
-		# Get client IP address
-		self.client_ip_address = CLEANUP_ADDRESS( self.client_address[0] )
-		# Get Web protocol
-		self.web_protocol = PROTOCOL[ self.server.server_port ]
 		# Send the web page
 		self.send_response( http.HTTPStatus.OK )
 		self.send_header( 'Content-type', 'text/html' )
@@ -99,7 +100,7 @@ ssl_context.load_cert_chain( certfile=CERTFILE.name, keyfile=KEYFILE.name )
 httpsd.socket = ssl_context.wrap_socket( httpsd.socket, server_side=True )
 
 # Print banner
-print( '\n~~~~~~~~    HTTP(S) Server    ~~~~~~~~~')
+print( '\n~~~~~~~~    HTTP(S) Server    ~~~~~~~~~' )
 print( 'Press Ctrl+C to stop the application...\n' )
 
 # Handle exceptions such as Ctrl+C
