@@ -1,0 +1,16 @@
+services:
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: unless-stopped
+#    ports:
+#      - '3000:3000'
+    environment:
+      GF_ANALYTICS_CHECK_FOR_UPDATES: false
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: false
+      GF_REPORTING_ENABLED: false
+      GF_NEWS_NEWS_FEED_ENABLED: false
+networks:
+  default:
+    external: true
+    name: proxy
