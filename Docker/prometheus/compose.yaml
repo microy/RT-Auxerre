@@ -1,0 +1,16 @@
+name: prometheus
+services:
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    restart: always
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+#    ports:
+#      - 9090:9090
+    environment:
+      - TZ=Europe/Paris
+networks:
+  default:
+    external: true
+    name: proxy
