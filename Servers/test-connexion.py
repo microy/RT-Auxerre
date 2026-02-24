@@ -7,15 +7,10 @@
 # usage : $ sudo ./test-connexion.py
 #
 
-# -- Source --------------------------------------------------------------------
-# Checks the incoming traffic of the trainees' firewall
 #
-#   Release:   2024-09-02 04:30 PM
-#   Author:    Valentin BELYN (valentin.belyn@stormshield.eu)
-#   Copyright: Stormshield, 2024
+# Reference :
+#   Valentin BELYN (https://github.com/ValentinBELYN)
 #
-# (!) Python 3.11 or later is required
-# ------------------------------------------------------------------------------
 
 # Dependencies
 import asyncio, os, socket
@@ -46,7 +41,7 @@ ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 # Result data class
 @dataclass
 class Results :
-	area : int
+	number : int
 	is_ipv4_host_reachable : bool = False
 	is_ipv6_host_reachable : bool = False
 	is_ipv4_http_reachable : bool = False
@@ -60,8 +55,8 @@ async def service_is_reachable( ip_address, port ) :
 		_, writer = await asyncio.wait_for( asyncio.open_connection( host = ip_address, port = port ), timeout = 2 )
 		writer.close()
 		return True
-	except OSError :
-		return False
+	except : pass
+	return False
 
 # Ping IPv4
 async def ping4( destination_address ) :
@@ -86,11 +81,11 @@ async def ping6( destination_address ) :
 	return False
 
 # Test one area
-async def test_environment( area ) :
+async def test_area( area ) :
 	ipv4_destination = IPV4_ADDRESS.format( area = area )
 	ipv6_destination = IPV6_ADDRESS.format( area = area )
 	return Results(
-		area = area,
+		number = area,
 		is_ipv4_host_reachable = await ping4( ipv4_destination ),
 		is_ipv6_host_reachable = await ping6( ipv6_destination ),
 		is_ipv4_http_reachable = await service_is_reachable( ipv4_destination, 80 ),
@@ -99,9 +94,8 @@ async def test_environment( area ) :
 		is_ipv6_https_reachable = await service_is_reachable( ipv6_destination, 443 ) )
 
 # Test all areas
-async def test_environments( num_trainees ) :
-	loop = asyncio.get_running_loop()
-	tasks = [ loop.create_task( test_environment(i + 1) ) for i in range( num_trainees ) ]
+async def test_areas( area_number ) :
+	tasks = [ asyncio.get_running_loop().create_task( test_area( i + 1 ) ) for i in range( area_number ) ]
 	await asyncio.wait( tasks )
 	return [ task.result() for task in tasks ]
 
@@ -117,18 +111,18 @@ IPV6_ADDRESS = args.destination6
 try :
 	while True :
 		print('Updating...')
-		environments = asyncio.run( test_environments( args.number ) )
+		areas = asyncio.run( test_areas( args.number ) )
 		print('\033[H\033[J~~ RT Auxerre Lab Networks ~~\n')
-		for environment in environments:
-			print(f'   Area {environment.area} :'
-					f'   IPv4 '
-					f'{COLORS[environment.is_ipv4_host_reachable]} ICMP \033[0m '
-					f'{COLORS[environment.is_ipv4_http_reachable]} HTTP \033[0m '
-					f'{COLORS[environment.is_ipv4_https_reachable]} HTTPS \033[0m'
-					f'   IPv6 '
-					f'{COLORS[environment.is_ipv6_host_reachable]} ICMP \033[0m '
-					f'{COLORS[environment.is_ipv6_http_reachable]} HTTP \033[0m '
-					f'{COLORS[environment.is_ipv6_https_reachable]} HTTPS \033[0m' )
+		for area in areas:
+			print( f'   Area {area.number} :'
+				   f'   IPv4 '
+				   f'{COLORS[area.is_ipv4_host_reachable]} ICMP \033[0m '
+				   f'{COLORS[area.is_ipv4_http_reachable]} HTTP \033[0m '
+				   f'{COLORS[area.is_ipv4_https_reachable]} HTTPS \033[0m'
+				   f'   IPv6 '
+				   f'{COLORS[area.is_ipv6_host_reachable]} ICMP \033[0m '
+				   f'{COLORS[area.is_ipv6_http_reachable]} HTTP \033[0m '
+				   f'{COLORS[area.is_ipv6_https_reachable]} HTTPS \033[0m' )
 		print( '\nLast updated on', datetime.today().strftime( '%H:%M:%S' ) )
 		sleep( args.interval )
 		print( '\033[A\033[K', end='' )
