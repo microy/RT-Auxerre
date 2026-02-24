@@ -20,7 +20,7 @@
 # Dependencies
 import argparse
 import asyncio
-import dataclasses
+from dataclasses import dataclass
 import datetime
 import os
 import socket
@@ -47,7 +47,7 @@ ICMP4_PACKET = b'\x08\x00\xf7\xfe\x00\x00\x00\x01'
 ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 
 # Result data class
-@dataclasses.dataclass
+@dataclass
 class Results :
 	area : int
 	is_ipv4_host_reachable : bool = False
