@@ -95,8 +95,8 @@ async def test_area( area ) :
 
 # Test all areas
 async def test_areas( area_number ) :
-	tasks = [ asyncio.get_running_loop().create_task( test_area( i + 1 ) ) for i in range( area_number ) ]
-	await asyncio.wait( tasks )
+	async with asyncio.TaskGroup() as task_group :
+		tasks = [ task_group.create_task( test_area( i + 1 ) ) for i in range( area_number ) ]
 	return [ task.result() for task in tasks ]
 
 # Main
