@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 #
-# Service reachability test application
+# Network and service reachability test application
 # https://github.com/microy/rt-auxerre
 # Copyright (c) 2026 Michaël Roy
 # usage : $ sudo ./test-connexion.py
@@ -38,54 +38,54 @@ ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 class Results :
 	number : int
 	is_ipv4_host_reachable : bool = False
-	is_ipv6_host_reachable : bool = False
 	is_ipv4_http_reachable : bool = False
-	is_ipv6_http_reachable : bool = False
 	is_ipv4_https_reachable : bool = False
+	is_ipv6_host_reachable : bool = False
+	is_ipv6_http_reachable : bool = False
 	is_ipv6_https_reachable : bool = False
 
 # Service reachability test funtion
-async def service_is_reachable( ip_address, port ) :
+async def test_service( ip_address, port ) :
 	try :
 		await asyncio.wait_for( asyncio.open_connection( host = ip_address, port = port ), timeout = 2 )
 		return True
 	except : return False
 
 # Ping IPv4
-async def ping4( destination_address ) :
+async def test_ping4( destination_address ) :
 	try :
 		with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
 			icmp_socket.sendto( ICMP4_PACKET, ( destination_address, 0 ) )
-			response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
-			return True if response[ 20:21 ] == b'\x00' else False
+			answer = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
+			return True if answer[ 20:21 ] == b'\x00' else False
 	except : return False
 
 # Ping IPv6
-async def ping6( destination_address ) :
+async def test_ping6( destination_address ) :
 	try :
 		with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
 			icmp_socket.sendto( ICMP6_PACKET, ( destination_address, 0 ) )
-			response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
-			return True if response[ :1 ] == b'\x81' else False
+			answer = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
+			return True if answer[ :1 ] == b'\x81' else False
 	except : return False
 
 # Test one area
-async def test_area( area ) :
+async def test_one_area( area ) :
 	ipv4_destination = IPV4_ADDRESS.format( area = area )
 	ipv6_destination = IPV6_ADDRESS.format( area = area )
 	return Results(
 		number = area,
-		is_ipv4_host_reachable = await ping4( ipv4_destination ),
-		is_ipv6_host_reachable = await ping6( ipv6_destination ),
-		is_ipv4_http_reachable = await service_is_reachable( ipv4_destination, 80 ),
-		is_ipv6_http_reachable = await service_is_reachable( ipv6_destination, 80 ),
-		is_ipv4_https_reachable = await service_is_reachable( ipv4_destination, 443 ),
-		is_ipv6_https_reachable = await service_is_reachable( ipv6_destination, 443 ) )
+		is_ipv4_host_reachable = await test_ping4( ipv4_destination ),
+		is_ipv4_http_reachable = await test_service( ipv4_destination, 80 ),
+		is_ipv4_https_reachable = await test_service( ipv4_destination, 443 ),
+		is_ipv6_host_reachable = await test_ping6( ipv6_destination ),
+		is_ipv6_http_reachable = await test_service( ipv6_destination, 80 ),
+		is_ipv6_https_reachable = await test_service( ipv6_destination, 443 ) )
 
 # Test all areas
-async def test_areas( area_number ) :
+async def test_all_areas( area_number ) :
 	async with asyncio.TaskGroup() as task_group :
-		tasks = [ task_group.create_task( test_area( i + 1 ) ) for i in range( area_number ) ]
+		tasks = [ task_group.create_task( test_one_area( i + 1 ) ) for i in range( area_number ) ]
 	return [ task.result() for task in tasks ]
 
 # Main
@@ -100,7 +100,7 @@ IPV6_ADDRESS = args.destination6
 try :
 	while True :
 		print('Updating...')
-		areas = asyncio.run( test_areas( args.number ) )
+		areas = asyncio.run( test_all_areas( args.number ) )
 		print('\033[H\033[J~~ RT Auxerre Lab Networks ~~\n')
 		for area in areas:
 			print( f'   Area {area.number} :'
