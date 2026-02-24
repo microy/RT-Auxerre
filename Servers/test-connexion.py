@@ -108,14 +108,13 @@ try :
 	while True :
 		print('Updating...')
 		areas = asyncio.run( test_all_areas( args.number ) )
-		print('\033[H\033[J~~ RT Auxerre Lab Networks ~~\n')
+		print( '\033[H\033[J\nRT Auxerre Lab Networks\n' )
+		print( '	     ------- IPv4 --------   ------- IPv6 --------\n' )
 		for area in areas:
-			print( f'   Area {area.number} :'
-				   f'   IPv4 '
+			print( f'   Area {area.number} :  '
 				   f'{COLORS[area.is_ipv4_host_reachable]} ICMP \033[0m '
 				   f'{COLORS[area.is_ipv4_http_reachable]} HTTP \033[0m '
-				   f'{COLORS[area.is_ipv4_https_reachable]} HTTPS \033[0m'
-				   f'   IPv6 '
+				   f'{COLORS[area.is_ipv4_https_reachable]} HTTPS \033[0m   '
 				   f'{COLORS[area.is_ipv6_host_reachable]} ICMP \033[0m '
 				   f'{COLORS[area.is_ipv6_http_reachable]} HTTP \033[0m '
 				   f'{COLORS[area.is_ipv6_https_reachable]} HTTPS \033[0m' )
