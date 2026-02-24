@@ -23,8 +23,8 @@ import asyncio
 import dataclasses
 import datetime
 import os
-import scapy.all as scapy
 import socket
+import struct
 import time
 
 # Check if root
@@ -38,9 +38,17 @@ IPV6_ADDRESS = 'fd00:{area}1::1'
 
 # Bash colors
 COLORS = {
-	False : '\033[31m', # RED
-	True : '\033[32m'   # GREEN
+	False : '\033[41m', # RED
+	True : '\033[42m'   # GREEN
 }
+
+# ICMP sockets
+ICMP4_SOCKET = socket.socket( socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP )
+ICMP6_SOCKET = socket.socket( socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6 )
+
+# ICMP request packets
+ICMP4_PACKET = b'\x08\x00\xf7\xfe\x00\x00\x00\x01'
+ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 
 # Result data class
 @dataclasses.dataclass
@@ -62,11 +70,19 @@ async def service_is_reachable( ip_address, port ) :
 	except OSError :
 		return False
 
-# Host reachability test funtion
-async def host_is_reachable( ip_address, ipv6 = False ) :
-	if ipv6 : result = scapy.sr1( scapy.IPv6( dst = ip_address ) / scapy.ICMPv6EchoRequest(), timeout = 2, verbose = False )
-	else : result = scapy.sr1( scapy.IP( dst = ip_address ) / scapy.ICMP(), timeout = 2, verbose = False )
-	return ( result is not None ) and ( result.type in [ 0, 129 ] )
+# Ping IPv4
+async def send_ping4( destination_address ) :
+	ICMP4_SOCKET.sendto( ICMP4_PACKET, ( destination_address, 0 ) )
+	response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( ICMP4_SOCKET, 2048 ), timeout = 2 )
+	if response and struct.unpack( '!B', response[20:21] )[0] == 0 : return True
+	return False
+
+# Ping IPv6
+async def send_ping6( destination_address ) :
+	ICMP6_SOCKET.sendto( ICMP6_PACKET, ( destination_address, 0 ) )
+	response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( ICMP6_SOCKET, 2048 ), timeout = 2 )
+	if response and struct.unpack( '!B', response[2:3] )[0] == 129 : return True
+	return False
 
 # Test one area
 async def test_environment( area ) :
@@ -74,8 +90,8 @@ async def test_environment( area ) :
 	ipv6_destination = IPV6_ADDRESS.format( area = area )
 	return Results(
 		area = area,
-		is_ipv4_host_reachable = await host_is_reachable( ipv4_destination ),
-		is_ipv6_host_reachable = await host_is_reachable( ipv6_destination, True ),
+		is_ipv4_host_reachable = await send_ping4( ipv4_destination ),
+		is_ipv6_host_reachable = await send_ping6( ipv6_destination ),
 		is_ipv4_http_reachable = await service_is_reachable( ipv4_destination, 80 ),
 		is_ipv6_http_reachable = await service_is_reachable( ipv6_destination, 80 ),
 		is_ipv4_https_reachable = await service_is_reachable( ipv4_destination, 443 ),
@@ -104,14 +120,14 @@ try :
 		print('\033[H\033[J~~ RT Auxerre Lab Networks ~~\n')
 		for environment in environments:
 			print(f'   Area {environment.area} :'
-					f'   IPv4 ='
-					f' {COLORS[environment.is_ipv4_host_reachable]}| ICMP |\033[0m'
-					f' {COLORS[environment.is_ipv4_http_reachable]}| HTTP |\033[0m'
-					f' {COLORS[environment.is_ipv4_https_reachable]}| HTTPS |\033[0m'
-					f'   IPv6 ='
-					f' {COLORS[environment.is_ipv6_host_reachable]}| ICMP |\033[0m'
-					f' {COLORS[environment.is_ipv6_http_reachable]}| HTTP |\033[0m'
-					f' {COLORS[environment.is_ipv6_https_reachable]}| HTTPS |\033[0m' )
+					f'   IPv4 '
+					f'{COLORS[environment.is_ipv4_host_reachable]} ICMP \033[0m '
+					f'{COLORS[environment.is_ipv4_http_reachable]} HTTP \033[0m '
+					f'{COLORS[environment.is_ipv4_https_reachable]} HTTPS \033[0m'
+					f'   IPv6 '
+					f'{COLORS[environment.is_ipv6_host_reachable]} ICMP \033[0m '
+					f'{COLORS[environment.is_ipv6_http_reachable]} HTTP \033[0m '
+					f'{COLORS[environment.is_ipv6_https_reachable]} HTTPS \033[0m' )
 		print( '\nLast updated on', datetime.datetime.today().strftime( '%H:%M:%S' ) )
 		time.sleep( args.interval )
 		print( '\033[A\033[K', end='' )
