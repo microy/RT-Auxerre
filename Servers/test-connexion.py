@@ -106,11 +106,11 @@ async def test_environments( num_trainees ) :
 	return [ task.result() for task in tasks ]
 
 # Main
-parser = ArgumentParser( description='Checks the incoming traffic of the trainees \'router' )
-parser.add_argument( '-n', '--number', type=int, default=8,	help='the number of trainees (default to 8)' )
-parser.add_argument( '-i', '--interval', type=int, default=30, help='the refresh interval (default to 30 seconds)' )
-parser.add_argument( '-d4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'Choose the IPv4 destination address (default to {IPV4_ADDRESS})' )
-parser.add_argument( '-d6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'Choose the IPv6 destination address (default to {IPV6_ADDRESS})' )
+parser = ArgumentParser( description='Checks the incoming traffic of the different network areas' )
+parser.add_argument( '-n', '--number', type=int, default=8,	help='Number of areas (default to 8)' )
+parser.add_argument( '-i', '--interval', type=int, default=30, help='Refresh interval (default to 30 seconds)' )
+parser.add_argument( '-d4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
+parser.add_argument( '-d6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
 args = parser.parse_args()
 IPV4_ADDRESS = args.destination4
 IPV6_ADDRESS = args.destination6
