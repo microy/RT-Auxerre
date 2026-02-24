@@ -53,7 +53,6 @@ class Results :
 async def service_is_reachable( ip_address, port ) :
 	try :
 		_, writer = await asyncio.wait_for( asyncio.open_connection( host = ip_address, port = port ), timeout = 2 )
-		writer.close()
 		return True
 	except : pass
 	return False
@@ -65,7 +64,7 @@ async def ping4( destination_address ) :
 		icmp_socket.setblocking( False )
 		icmp_socket.sendto( ICMP4_PACKET, ( destination_address, 0 ) )
 		response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
-		if response and response[20:21] == b'\x00' : return True
+		if response[20:21] == b'\x00' : return True
 	except : pass
 	return False
 
@@ -76,7 +75,7 @@ async def ping6( destination_address ) :
 		icmp_socket.setblocking( False )
 		icmp_socket.sendto( ICMP6_PACKET, ( destination_address, 0 ) )
 		response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
-		if response and response[:1] == b'\x81' : return True
+		if response[:1] == b'\x81' : return True
 	except : pass
 	return False
 
