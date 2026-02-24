@@ -7,11 +7,6 @@
 # usage : $ sudo ./test-connexion.py
 #
 
-#
-# Reference :
-#   Valentin BELYN (https://github.com/ValentinBELYN)
-#
-
 # Dependencies
 import asyncio, os, socket
 from argparse import ArgumentParser
@@ -52,32 +47,27 @@ class Results :
 # Service reachability test funtion
 async def service_is_reachable( ip_address, port ) :
 	try :
-		_, writer = await asyncio.wait_for( asyncio.open_connection( host = ip_address, port = port ), timeout = 2 )
+		await asyncio.wait_for( asyncio.open_connection( host = ip_address, port = port ), timeout = 2 )
 		return True
-	except : pass
-	return False
+	except : return False
 
 # Ping IPv4
 async def ping4( destination_address ) :
 	try :
-		icmp_socket = socket.socket( socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP )
-		icmp_socket.setblocking( False )
-		icmp_socket.sendto( ICMP4_PACKET, ( destination_address, 0 ) )
-		response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
-		if response[20:21] == b'\x00' : return True
-	except : pass
-	return False
+		with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
+			icmp_socket.sendto( ICMP4_PACKET, ( destination_address, 0 ) )
+			response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
+			return True if response[ 20:21 ] == b'\x00' else False
+	except : return False
 
 # Ping IPv6
 async def ping6( destination_address ) :
 	try :
-		icmp_socket = socket.socket( socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6 )
-		icmp_socket.setblocking( False )
-		icmp_socket.sendto( ICMP6_PACKET, ( destination_address, 0 ) )
-		response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
-		if response[:1] == b'\x81' : return True
-	except : pass
-	return False
+		with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
+			icmp_socket.sendto( ICMP6_PACKET, ( destination_address, 0 ) )
+			response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
+			return True if response[ :1 ] == b'\x81' else False
+	except : return False
 
 # Test one area
 async def test_area( area ) :
