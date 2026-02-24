@@ -42,10 +42,6 @@ COLORS = {
 	True : '\033[42m'   # GREEN
 }
 
-# ICMP sockets
-ICMP4_SOCKET = socket.socket( socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP )
-ICMP6_SOCKET = socket.socket( socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6 )
-
 # ICMP request packets
 ICMP4_PACKET = b'\x08\x00\xf7\xfe\x00\x00\x00\x01'
 ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
@@ -71,17 +67,25 @@ async def service_is_reachable( ip_address, port ) :
 		return False
 
 # Ping IPv4
-async def send_ping4( destination_address ) :
-	ICMP4_SOCKET.sendto( ICMP4_PACKET, ( destination_address, 0 ) )
-	response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( ICMP4_SOCKET, 2048 ), timeout = 2 )
-	if response and struct.unpack( '!B', response[20:21] )[0] == 0 : return True
+async def ping4( destination_address ) :
+	try :
+		icmp_socket = socket.socket( socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP )
+		icmp_socket.setblocking( False )
+		icmp_socket.sendto( ICMP4_PACKET, ( destination_address, 0 ) )
+		response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
+		if response and response[20:21] == b'\x00' : return True
+	except : pass
 	return False
 
 # Ping IPv6
-async def send_ping6( destination_address ) :
-	ICMP6_SOCKET.sendto( ICMP6_PACKET, ( destination_address, 0 ) )
-	response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( ICMP6_SOCKET, 2048 ), timeout = 2 )
-	if response and struct.unpack( '!B', response[2:3] )[0] == 129 : return True
+async def ping6( destination_address ) :
+	try :
+		icmp_socket = socket.socket( socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6 )
+		icmp_socket.setblocking( False )
+		icmp_socket.sendto( ICMP6_PACKET, ( destination_address, 0 ) )
+		response = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
+		if response and response[:1] == b'\x81' : return True
+	except : pass
 	return False
 
 # Test one area
@@ -90,8 +94,8 @@ async def test_environment( area ) :
 	ipv6_destination = IPV6_ADDRESS.format( area = area )
 	return Results(
 		area = area,
-		is_ipv4_host_reachable = await send_ping4( ipv4_destination ),
-		is_ipv6_host_reachable = await send_ping6( ipv6_destination ),
+		is_ipv4_host_reachable = await ping4( ipv4_destination ),
+		is_ipv6_host_reachable = await ping6( ipv6_destination ),
 		is_ipv4_http_reachable = await service_is_reachable( ipv4_destination, 80 ),
 		is_ipv6_http_reachable = await service_is_reachable( ipv6_destination, 80 ),
 		is_ipv4_https_reachable = await service_is_reachable( ipv4_destination, 443 ),
