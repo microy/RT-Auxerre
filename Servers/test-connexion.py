@@ -18,14 +18,11 @@
 # ------------------------------------------------------------------------------
 
 # Dependencies
-import argparse
-import asyncio
+import asyncio, os, socket
+from argparse import ArgumentParser
 from dataclasses import dataclass
-import datetime
-import os
-import socket
-import struct
-import time
+from datetime import datetime
+from time import sleep
 
 # Check if root
 if os.geteuid() != 0 :
@@ -109,7 +106,7 @@ async def test_environments( num_trainees ) :
 	return [ task.result() for task in tasks ]
 
 # Main
-parser = argparse.ArgumentParser( description='Checks the incoming traffic of the trainees \'router' )
+parser = ArgumentParser( description='Checks the incoming traffic of the trainees \'router' )
 parser.add_argument( '-n', '--number', type=int, default=8,	help='the number of trainees (default to 8)' )
 parser.add_argument( '-i', '--interval', type=int, default=30, help='the refresh interval (default to 30 seconds)' )
 parser.add_argument( '-d4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'Choose the IPv4 destination address (default to {IPV4_ADDRESS})' )
@@ -132,8 +129,8 @@ try :
 					f'{COLORS[environment.is_ipv6_host_reachable]} ICMP \033[0m '
 					f'{COLORS[environment.is_ipv6_http_reachable]} HTTP \033[0m '
 					f'{COLORS[environment.is_ipv6_https_reachable]} HTTPS \033[0m' )
-		print( '\nLast updated on', datetime.datetime.today().strftime( '%H:%M:%S' ) )
-		time.sleep( args.interval )
+		print( '\nLast updated on', datetime.today().strftime( '%H:%M:%S' ) )
+		sleep( args.interval )
 		print( '\033[A\033[K', end='' )
 except KeyboardInterrupt :
 	print( '\033[A\033[KExited.' )
