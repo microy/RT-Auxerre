@@ -70,17 +70,24 @@ async def test_ping6( destination_address ) :
 	except : return False
 
 # Test one area
-async def test_one_area( area ) :
-	ipv4_destination = IPV4_ADDRESS.format( area = area )
-	ipv6_destination = IPV6_ADDRESS.format( area = area )
+async def test_one_area( area_number ) :
+	ipv4_destination = IPV4_ADDRESS.format( area = area_number )
+	ipv6_destination = IPV6_ADDRESS.format( area = area_number )
+	async with asyncio.TaskGroup() as task_group :
+		task_ipv4_host_reachable = task_group.create_task( test_ping4( ipv4_destination ) )
+		task_ipv4_http_reachable = task_group.create_task( test_service( ipv4_destination, 80 ) )
+		task_ipv4_https_reachable = task_group.create_task( test_service( ipv4_destination, 443 ) )
+		task_ipv6_host_reachable = task_group.create_task( test_ping6( ipv6_destination ) )
+		task_ipv6_http_reachable = task_group.create_task( test_service( ipv6_destination, 80 ) )
+		task_ipv6_https_reachable = task_group.create_task( test_service( ipv6_destination, 443 ) )
 	return Results(
-		number = area,
-		is_ipv4_host_reachable = await test_ping4( ipv4_destination ),
-		is_ipv4_http_reachable = await test_service( ipv4_destination, 80 ),
-		is_ipv4_https_reachable = await test_service( ipv4_destination, 443 ),
-		is_ipv6_host_reachable = await test_ping6( ipv6_destination ),
-		is_ipv6_http_reachable = await test_service( ipv6_destination, 80 ),
-		is_ipv6_https_reachable = await test_service( ipv6_destination, 443 ) )
+		number = area_number,
+		is_ipv4_host_reachable = task_ipv4_host_reachable.result(),
+		is_ipv4_http_reachable = task_ipv4_http_reachable.result(),
+		is_ipv4_https_reachable = task_ipv4_https_reachable.result(),
+		is_ipv6_host_reachable = task_ipv6_host_reachable.result(),
+		is_ipv6_http_reachable = task_ipv6_http_reachable.result(),
+		is_ipv6_https_reachable = task_ipv6_https_reachable.result() )
 
 # Test all areas
 async def test_all_areas( area_number ) :
