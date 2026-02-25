@@ -19,14 +19,24 @@ if os.geteuid() != 0 :
 	print( '\n-> Run this application as root (sudo)...')
 	exit()
 
-# Destination IP addresses
-IPV4_ADDRESS = '203.0.113.{area}'
-IPV6_ADDRESS = 'fd00:{area}1::1'
-
 # Bash colors
 COLORS = {
 	False : '\033[41m', # RED
 	True : '\033[42m'   # GREEN
+}
+
+# Destination IP addresses
+IPV4_ADDRESS = '203.0.113.{area}'
+IPV6_ADDRESS = 'fd00:{area}1::1'
+
+# Application protocols by port
+PROTOCOLS = {
+	0 : 'ICMP',
+	21 : 'FTP',
+	22 : 'SSH',
+	25 : 'SMTP',
+	80 : 'HTTP',
+	443 : 'HTTPS'
 }
 
 # ICMP request packets
@@ -38,9 +48,15 @@ ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 class Results :
 	number : int
 	is_ipv4_host_reachable : bool = False
+	is_ipv4_ftp_reachable : bool = False
+	is_ipv4_ssh_reachable : bool = False
+	is_ipv4_smtp_reachable : bool = False
 	is_ipv4_http_reachable : bool = False
 	is_ipv4_https_reachable : bool = False
 	is_ipv6_host_reachable : bool = False
+	is_ipv6_ftp_reachable : bool = False
+	is_ipv6_ssh_reachable : bool = False
+	is_ipv6_smtp_reachable : bool = False
 	is_ipv6_http_reachable : bool = False
 	is_ipv6_https_reachable : bool = False
 
@@ -75,17 +91,29 @@ async def test_one_area( area_number ) :
 	ipv6_destination = IPV6_ADDRESS.format( area = area_number )
 	async with asyncio.TaskGroup() as task_group :
 		task_ipv4_host_reachable = task_group.create_task( test_ping4( ipv4_destination ) )
+		task_ipv4_ftp_reachable = task_group.create_task( test_service( ipv4_destination, 21 ) )
+		task_ipv4_ssh_reachable = task_group.create_task( test_service( ipv4_destination, 22 ) )
+		task_ipv4_smtp_reachable = task_group.create_task( test_service( ipv4_destination, 25 ) )
 		task_ipv4_http_reachable = task_group.create_task( test_service( ipv4_destination, 80 ) )
 		task_ipv4_https_reachable = task_group.create_task( test_service( ipv4_destination, 443 ) )
 		task_ipv6_host_reachable = task_group.create_task( test_ping6( ipv6_destination ) )
+		task_ipv6_ftp_reachable = task_group.create_task( test_service( ipv6_destination, 21 ) )
+		task_ipv6_ssh_reachable = task_group.create_task( test_service( ipv6_destination, 22 ) )
+		task_ipv6_smtp_reachable = task_group.create_task( test_service( ipv6_destination, 25 ) )
 		task_ipv6_http_reachable = task_group.create_task( test_service( ipv6_destination, 80 ) )
 		task_ipv6_https_reachable = task_group.create_task( test_service( ipv6_destination, 443 ) )
 	return Results(
 		number = area_number,
 		is_ipv4_host_reachable = task_ipv4_host_reachable.result(),
+		is_ipv4_ftp_reachable = task_ipv4_ftp_reachable.result(),
+		is_ipv4_ssh_reachable = task_ipv4_ssh_reachable.result(),
+		is_ipv4_smtp_reachable = task_ipv4_smtp_reachable.result(),
 		is_ipv4_http_reachable = task_ipv4_http_reachable.result(),
 		is_ipv4_https_reachable = task_ipv4_https_reachable.result(),
 		is_ipv6_host_reachable = task_ipv6_host_reachable.result(),
+		is_ipv6_ftp_reachable = task_ipv6_ftp_reachable.result(),
+		is_ipv6_ssh_reachable = task_ipv6_ssh_reachable.result(),
+		is_ipv6_smtp_reachable = task_ipv6_smtp_reachable.result(),
 		is_ipv6_http_reachable = task_ipv6_http_reachable.result(),
 		is_ipv6_https_reachable = task_ipv6_https_reachable.result() )
 
@@ -109,13 +137,19 @@ try :
 		print('Updating...')
 		areas = asyncio.run( test_all_areas( args.number ) )
 		print( '\033[H\033[J\nRT Auxerre Lab Networks\n' )
-		print( '	     ------- IPv4 --------   ------- IPv6 --------\n' )
+		print( '	     ----------------- IPv4 -----------------   ----------------- IPv6 -----------------\n' )
 		for area in areas:
 			print( f'   Area {area.number} :  '
 				   f'{COLORS[area.is_ipv4_host_reachable]} ICMP \033[0m '
+				   f'{COLORS[area.is_ipv4_ftp_reachable]} FTP \033[0m '
+				   f'{COLORS[area.is_ipv4_ssh_reachable]} SSH \033[0m '
+				   f'{COLORS[area.is_ipv4_smtp_reachable]} SMTP \033[0m '
 				   f'{COLORS[area.is_ipv4_http_reachable]} HTTP \033[0m '
 				   f'{COLORS[area.is_ipv4_https_reachable]} HTTPS \033[0m   '
 				   f'{COLORS[area.is_ipv6_host_reachable]} ICMP \033[0m '
+				   f'{COLORS[area.is_ipv6_ftp_reachable]} FTP \033[0m '
+				   f'{COLORS[area.is_ipv6_ssh_reachable]} SSH \033[0m '
+				   f'{COLORS[area.is_ipv6_smtp_reachable]} SMTP \033[0m '
 				   f'{COLORS[area.is_ipv6_http_reachable]} HTTP \033[0m '
 				   f'{COLORS[area.is_ipv6_https_reachable]} HTTPS \033[0m' )
 		print( '\nLast updated on', datetime.today().strftime( '%H:%M:%S' ) )
