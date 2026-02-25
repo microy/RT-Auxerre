@@ -68,21 +68,21 @@ async def test_service( ip_address, port ) :
 	except : return False
 
 # Ping IPv4
-async def test_ping4( destination_address ) :
+async def test_ping4( ip_address ) :
 	try :
 		with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
-			icmp_socket.sendto( ICMP4_PACKET, ( destination_address, 0 ) )
+			icmp_socket.sendto( ICMP4_PACKET, ( ip_address, 0 ) )
 			answer = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
-			return True if answer[ 20:21 ] == b'\x00' else False
+			return True if answer and answer[ 20:21 ] == b'\x00' else False
 	except : return False
 
 # Ping IPv6
-async def test_ping6( destination_address ) :
+async def test_ping6( ip_address ) :
 	try :
 		with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
-			icmp_socket.sendto( ICMP6_PACKET, ( destination_address, 0 ) )
+			icmp_socket.sendto( ICMP6_PACKET, ( ip_address, 0 ) )
 			answer = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
-			return True if answer[ :1 ] == b'\x81' else False
+			return True if answer and answer[ :1 ] == b'\x81' else False
 	except : return False
 
 # Test one area
