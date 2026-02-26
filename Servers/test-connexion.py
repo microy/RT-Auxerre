@@ -1,14 +1,14 @@
 #! /usr/bin/env python3
 
 #
-# Network and service reachability test application
+# Service reachability test application
 # https://github.com/microy/rt-auxerre
 # Copyright (c) 2026 Michaël Roy
 # usage : $ sudo ./test-connexion.py
 #
 
 # Dependencies
-import asyncio, os, socket
+import asyncio, ipaddress, os, socket
 from argparse import ArgumentParser
 from dataclasses import dataclass
 from datetime import datetime
@@ -43,79 +43,37 @@ PROTOCOLS = {
 ICMP4_PACKET = b'\x08\x00\xf7\xfe\x00\x00\x00\x01'
 ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 
-# Result data class
-@dataclass
-class Results :
-	number : int
-	is_ipv4_host_reachable : bool = False
-	is_ipv4_ftp_reachable : bool = False
-	is_ipv4_ssh_reachable : bool = False
-	is_ipv4_smtp_reachable : bool = False
-	is_ipv4_http_reachable : bool = False
-	is_ipv4_https_reachable : bool = False
-	is_ipv6_host_reachable : bool = False
-	is_ipv6_ftp_reachable : bool = False
-	is_ipv6_ssh_reachable : bool = False
-	is_ipv6_smtp_reachable : bool = False
-	is_ipv6_http_reachable : bool = False
-	is_ipv6_https_reachable : bool = False
-
-# Service reachability test funtion
-async def test_service( ip_address, port ) :
+# Test function
+async def test( ip_address, port ) :
+	# Handle exceptions
 	try :
-		await asyncio.wait_for( asyncio.open_connection( host = ip_address, port = port ), timeout = 2 )
-		return True
-	except : return False
-
-# Ping IPv4
-async def test_ping4( ip_address ) :
-	try :
-		with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
-			icmp_socket.sendto( ICMP4_PACKET, ( ip_address, 0 ) )
-			answer = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
-			return True if answer and answer[ 20:21 ] == b'\x00' else False
-	except : return False
-
-# Ping IPv6
-async def test_ping6( ip_address ) :
-	try :
-		with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
-			icmp_socket.sendto( ICMP6_PACKET, ( ip_address, 0 ) )
-			answer = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
-			return True if answer and answer[ :1 ] == b'\x81' else False
-	except : return False
+		# Test TCP service
+		if port :
+			await asyncio.wait_for( asyncio.open_connection( host = ip_address, port = port ), timeout = 2 )
+			return ( port, True )
+		# Test IPv4 ping
+		elif ipaddress.ip_address( ip_address ).version == 4 : 
+			with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
+				icmp_socket.sendto( ICMP4_PACKET, ( ip_address, 0 ) )
+				answer = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
+				if answer and answer[ 20:21 ] == b'\x00' : return ( port, True )
+		# Test IPv6 ping
+		else :
+			with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
+				icmp_socket.sendto( ICMP6_PACKET, ( ip_address, 0 ) )
+				answer = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = 2 )
+				if answer and answer[ :1 ] == b'\x81' : return ( port, True )
+	except : pass
+	# Exception
+	return ( port, False )
 
 # Test one area
 async def test_one_area( area_number ) :
 	ipv4_destination = IPV4_ADDRESS.format( area = area_number )
 	ipv6_destination = IPV6_ADDRESS.format( area = area_number )
 	async with asyncio.TaskGroup() as task_group :
-		task_ipv4_host_reachable = task_group.create_task( test_ping4( ipv4_destination ) )
-		task_ipv4_ftp_reachable = task_group.create_task( test_service( ipv4_destination, 21 ) )
-		task_ipv4_ssh_reachable = task_group.create_task( test_service( ipv4_destination, 22 ) )
-		task_ipv4_smtp_reachable = task_group.create_task( test_service( ipv4_destination, 25 ) )
-		task_ipv4_http_reachable = task_group.create_task( test_service( ipv4_destination, 80 ) )
-		task_ipv4_https_reachable = task_group.create_task( test_service( ipv4_destination, 443 ) )
-		task_ipv6_host_reachable = task_group.create_task( test_ping6( ipv6_destination ) )
-		task_ipv6_ftp_reachable = task_group.create_task( test_service( ipv6_destination, 21 ) )
-		task_ipv6_ssh_reachable = task_group.create_task( test_service( ipv6_destination, 22 ) )
-		task_ipv6_smtp_reachable = task_group.create_task( test_service( ipv6_destination, 25 ) )
-		task_ipv6_http_reachable = task_group.create_task( test_service( ipv6_destination, 80 ) )
-		task_ipv6_https_reachable = task_group.create_task( test_service( ipv6_destination, 443 ) )
-	return Results(
-		number = area_number,
-		is_ipv4_host_reachable = task_ipv4_host_reachable.result(),
-		is_ipv4_ftp_reachable = task_ipv4_ftp_reachable.result(),
-		is_ipv4_ssh_reachable = task_ipv4_ssh_reachable.result(),
-		is_ipv4_smtp_reachable = task_ipv4_smtp_reachable.result(),
-		is_ipv4_http_reachable = task_ipv4_http_reachable.result(),
-		is_ipv4_https_reachable = task_ipv4_https_reachable.result(),
-		is_ipv6_host_reachable = task_ipv6_host_reachable.result(),
-		is_ipv6_ftp_reachable = task_ipv6_ftp_reachable.result(),
-		is_ipv6_ssh_reachable = task_ipv6_ssh_reachable.result(),
-		is_ipv6_smtp_reachable = task_ipv6_smtp_reachable.result(),
-		is_ipv6_http_reachable = task_ipv6_http_reachable.result(),
-		is_ipv6_https_reachable = task_ipv6_https_reachable.result() )
+		tasks = [ task_group.create_task( test( ip, port ) ) for ip in [ ipv4_destination, ipv6_destination ] for port in [ *PROTOCOLS.keys() ] ]
+	return [ task.result() for task in tasks ]
 
 # Test all areas
 async def test_all_areas( area_number ) :
@@ -137,21 +95,9 @@ try :
 		print('Updating...')
 		areas = asyncio.run( test_all_areas( args.number ) )
 		print( '\033[H\033[J\nRT Auxerre Lab Networks\n' )
-		print( '	     ----------------- IPv4 -----------------   ----------------- IPv6 -----------------\n' )
-		for area in areas:
-			print( f'   Area {area.number} :  '
-				   f'{COLORS[area.is_ipv4_host_reachable]} ICMP \033[0m '
-				   f'{COLORS[area.is_ipv4_ftp_reachable]} FTP \033[0m '
-				   f'{COLORS[area.is_ipv4_ssh_reachable]} SSH \033[0m '
-				   f'{COLORS[area.is_ipv4_smtp_reachable]} SMTP \033[0m '
-				   f'{COLORS[area.is_ipv4_http_reachable]} HTTP \033[0m '
-				   f'{COLORS[area.is_ipv4_https_reachable]} HTTPS \033[0m   '
-				   f'{COLORS[area.is_ipv6_host_reachable]} ICMP \033[0m '
-				   f'{COLORS[area.is_ipv6_ftp_reachable]} FTP \033[0m '
-				   f'{COLORS[area.is_ipv6_ssh_reachable]} SSH \033[0m '
-				   f'{COLORS[area.is_ipv6_smtp_reachable]} SMTP \033[0m '
-				   f'{COLORS[area.is_ipv6_http_reachable]} HTTP \033[0m '
-				   f'{COLORS[area.is_ipv6_https_reachable]} HTTPS \033[0m' )
+		print( '	      ----------------- IPv4 -----------------    ----------------- IPv6 -----------------\n' )
+		for area, tests in enumerate(areas) :
+			print( f'   Area {area} :   ' + ''.join( f'{COLORS[test[1]]} {PROTOCOLS[test[0]]} \033[0m ' for test in tests[:6] ) + '   ' + ''.join( f'{COLORS[test[1]]} {PROTOCOLS[test[0]]} \033[0m ' for test in tests[6:] ) )
 		print( '\nLast updated on', datetime.today().strftime( '%H:%M:%S' ) )
 		sleep( args.interval )
 		print( '\033[A\033[K', end='' )
