@@ -10,7 +10,6 @@
 # Dependencies
 import asyncio, ipaddress, os, socket
 from argparse import ArgumentParser
-from dataclasses import dataclass
 from datetime import datetime
 from time import sleep
 
@@ -85,8 +84,8 @@ async def test_all_areas( area_number ) :
 parser = ArgumentParser( description='Checks the incoming traffic of the different network areas' )
 parser.add_argument( '-n', '--number', type=int, default=8,	help='Number of areas (default to 8)' )
 parser.add_argument( '-i', '--interval', type=int, default=30, help='Refresh interval (default to 30 seconds)' )
-parser.add_argument( '-d4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
-parser.add_argument( '-d6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
+parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
+parser.add_argument( '-6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
 args = parser.parse_args()
 IPV4_ADDRESS = args.destination4
 IPV6_ADDRESS = args.destination6
