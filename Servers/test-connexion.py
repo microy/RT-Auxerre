@@ -83,9 +83,8 @@ async def test( address, port ) :
 						answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
 						# Check reply
 						if remote_address[ 0 ] == address and answer[ :1 ] == b'\x81' : return ( port, True )
-	# Exception
-	except Exception as error : print( error )
 	# Failed test
+	except : pass
 	return ( port, False )
 
 # Test one area
