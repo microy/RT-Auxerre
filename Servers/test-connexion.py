@@ -58,6 +58,8 @@ async def test( address, port ) :
 		elif ipaddress.ip_address( address ).version == 4 :
 			# Create network socket
 			with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
+				# Bind the socket
+				icmp_socket.bind( ( '', 0 ) )
 				# Send ping request
 				await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP4_PACKET, ( address, 0 ) )
 				# Get ping reply
@@ -68,6 +70,8 @@ async def test( address, port ) :
 		else :
 			# Create network socket
 			with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
+				# Bind the socket
+				icmp_socket.bind( ( '', 0 ) )
 				# Send ping request
 				await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP6_PACKET, ( address, 0 ) )
 				# Get ping reply
