@@ -8,10 +8,12 @@
 #
 
 # Dependencies
-import asyncio, ipaddress, os, socket
-from argparse import ArgumentParser
-from datetime import datetime
-from time import sleep
+import argparse
+import asyncio
+import ipaddress
+import os
+import socket
+import time
 
 # Check if root
 if os.geteuid() != 0 :
@@ -92,7 +94,7 @@ async def test_all_areas( area_number ) :
 	return [ task.result() for task in tasks ]
 
 # Main
-parser = ArgumentParser( description='Checks the incoming traffic of the different network areas' )
+parser = argparse.ArgumentParser( description='Checks the incoming traffic of the different network areas' )
 parser.add_argument( '-n', '--number', type=int, default=8,	help='Number of areas (default to 8)' )
 parser.add_argument( '-i', '--interval', type=int, default=30, help='Refresh interval (default to 30 seconds)' )
 parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
@@ -108,8 +110,8 @@ try :
 		print( '	        ----------------- IPv4 -----------------    ----------------- IPv6 -----------------\n' )
 		for area, results in enumerate( tests ) :
 			print( f'    Area {area + 1} :    ' + ''.join( f'{COLORS[ test[1] ]} {PROTOCOLS[ test[0] ]} \033[0m ' for test in results[ :6 ] ) + '   ' + ''.join( f'{COLORS[ test[1] ]} {PROTOCOLS[ test[0] ]} \033[0m ' for test in results[ 6: ] ) )
-		print( '\nLast updated on', datetime.today().strftime( '%H:%M:%S' ) )
-		sleep( args.interval )
+		print( '\nLast updated on', time.strftime( '%X' ) )
+		time.sleep( args.interval )
 		print( '\033[A\033[K', end='' )
 except KeyboardInterrupt :
 	print( '\033[A\033[KExited.' )
