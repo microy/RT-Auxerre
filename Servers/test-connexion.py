@@ -44,6 +44,9 @@ PROTOCOLS = {
 ICMP4_PACKET = b'\x08\x00\xf7\xfe\x00\x00\x00\x01'
 ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 
+# Timeout parameter
+TIMEOUT = 2
+
 # Test function
 async def test( address, port ) :
 	# Handle exceptions
@@ -51,33 +54,35 @@ async def test( address, port ) :
 		# Test TCP service
 		if port :
 			# Initiate a connection
-			await asyncio.wait_for( asyncio.open_connection( host = address, port = port ), timeout = 2 )
+			await asyncio.wait_for( asyncio.open_connection( host = address, port = port ), timeout = TIMEOUT )
 			# Connection done
 			return ( port, True )
 		# Test IPv4 ping
 		elif ipaddress.ip_address( address ).version == 4 :
 			# Create network socket
 			with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
-				# Bind the socket
-				icmp_socket.bind( ( '', 0 ) )
 				# Send ping request
 				await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP4_PACKET, ( address, 0 ) )
-				# Get ping reply
-				answer, remote_address = await asyncio.wait_for( asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 ), timeout = 2 )
-				# Check reply
-				if remote_address[0] == address and answer[ 20:21 ] == b'\x00' : return ( port, True )
+				# Wait for anwser
+				async with asyncio.timeout( TIMEOUT ) :
+					while True :
+						# Get ping reply
+						answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
+						# Check reply
+						if remote_address[ 0 ] == address and answer[ 20:21 ] == b'\x00' : return ( port, True )
 		# Test IPv6 ping
 		else :
 			# Create network socket
 			with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
-				# Bind the socket
-				icmp_socket.bind( ( '', 0 ) )
 				# Send ping request
 				await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP6_PACKET, ( address, 0 ) )
-				# Get ping reply
-				answer, remote_address = await asyncio.wait_for( asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 ), timeout = 2 )
-				# Check reply
-				if remote_address[0] == address and answer[ :1 ] == b'\x81' : return ( port, True )
+				# Wait for anwser
+				async with asyncio.timeout( TIMEOUT ) :
+					while True :
+						# Get ping reply
+						answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
+						# Check reply
+						if remote_address[ 0 ] == address and answer[ :1 ] == b'\x81' : return ( port, True )
 	# Exception
 	except Exception as error : print( error )
 	# Failed test
