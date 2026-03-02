@@ -26,7 +26,7 @@ COLORS = {
 	True : '\033[42m'   # GREEN
 }
 
-# Destination IP addresses
+# Destination IP addresses (coded with the area number)
 IPV4_ADDRESS = '203.0.113.{area}'
 IPV6_ADDRESS = 'fd00:{area}1::1'
 
@@ -47,9 +47,9 @@ ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 # Timeout parameter
 TIMEOUT = 2
 
-# Test function
+# Test function (TCP service or IPv4 ping or IPv6 ping)
 async def test( address, port ) :
-	# Handle exceptions
+	# Handle exceptions (connection or ping failed)
 	try :
 		# Test TCP service
 		if port :
@@ -89,37 +89,59 @@ async def test( address, port ) :
 
 # Test one area
 async def test_one_area( area_number ) :
+	# Modify the destination addresses according to the area number
 	ipv4_destination = IPV4_ADDRESS.format( area = area_number )
 	ipv6_destination = IPV6_ADDRESS.format( area = area_number )
+	# Create a task group
 	async with asyncio.TaskGroup() as task_group :
+		# Do all the tests for this area
 		tasks = [ task_group.create_task( test( ip, port ) ) for ip in [ ipv4_destination, ipv6_destination ] for port in [ *PROTOCOLS.keys() ] ]
+	# Return the results of the tasks for this area
 	return [ task.result() for task in tasks ]
 
 # Test all areas
 async def test_all_areas( area_number ) :
+	# Create a task group
 	async with asyncio.TaskGroup() as task_group :
+		# Test all areas
 		tasks = [ task_group.create_task( test_one_area( i + 1 ) ) for i in range( area_number ) ]
+	# Return the results of the tasks for each area
 	return [ task.result() for task in tasks ]
 
-# Main
+#
+# Main function
+#
+
+# Command line parameters
 parser = argparse.ArgumentParser( description='Checks the incoming traffic of the different network areas' )
 parser.add_argument( '-n', '--number', type=int, default=8,	help='Number of areas (default to 8)' )
 parser.add_argument( '-i', '--interval', type=int, default=30, help='Refresh interval (default to 30 seconds)' )
+parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Timeout for the tests (default to {TIMEOUT} seconds)' )
 parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
 parser.add_argument( '-6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
 args = parser.parse_args()
+# Register destination IP addresses
 IPV4_ADDRESS = args.destination4
 IPV6_ADDRESS = args.destination6
+# Register timeout parameter
+TIMEOUT = args.timeout
+# Loop through the tests
 try :
 	while True :
+		# Run the tests
 		print( 'Updating...' )
 		tests = asyncio.run( test_all_areas( args.number ) )
+		# Clear screen and print results
 		print( '\033[H\033[J\nRT Auxerre Lab Networks\n' )
 		print( '	        ----------------- IPv4 -----------------    ----------------- IPv6 -----------------\n' )
 		for area, results in enumerate( tests ) :
-			print( f'    Area {area + 1} :    ' + ''.join( f'{COLORS[ test[1] ]} {PROTOCOLS[ test[0] ]} \033[0m ' for test in results[ :6 ] ) + '   ' + ''.join( f'{COLORS[ test[1] ]} {PROTOCOLS[ test[0] ]} \033[0m ' for test in results[ 6: ] ) )
+			# Print results for one area
+			print( f'    Area {area + 1} :    ' + ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ :6 ] ) + '   ' + ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ 6: ] ) )
+		# Update time
 		print( '\nLast updated on', time.strftime( '%X' ) )
+		# Wait for next update
 		time.sleep( args.interval )
 		print( '\033[A\033[K', end='' )
+# Ctrl+C to stop the application
 except KeyboardInterrupt :
 	print( '\033[A\033[KExited.' )
