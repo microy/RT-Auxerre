@@ -31,14 +31,7 @@ IPV4_ADDRESS = '203.0.113.{area}'
 IPV6_ADDRESS = 'fd00:{area}1::1'
 
 # Application protocols by port
-PROTOCOLS = {
-	0 : 'ICMP',
-	21 : 'FTP',
-	22 : 'SSH',
-	25 : 'SMTP',
-	80 : 'HTTP',
-	443 : 'HTTPS'
-}
+PROTOCOLS = { 0 : 'ICMP', 21 : 'FTP', 22 : 'SSH', 25 : 'SMTP', 80 : 'HTTP', 443 : 'HTTPS' }
 
 # ICMP request packets
 ICMP4_PACKET = b'\x08\x00\xf7\xfe\x00\x00\x00\x01'
