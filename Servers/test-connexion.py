@@ -20,11 +20,8 @@ if os.geteuid() != 0 :
 	print( '\n-> Run this application as root (sudo)...')
 	exit()
 
-# Bash colors
-COLORS = {
-	False : '\033[41m', # RED
-	True : '\033[42m'   # GREEN
-}
+# Bash colors (red, green)
+COLORS = { False : '\033[41m', True : '\033[42m' }
 
 # Destination IP addresses (coded with the area number)
 IPV4_ADDRESS = '203.0.113.{area}'
