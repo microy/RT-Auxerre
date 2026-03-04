@@ -30,14 +30,42 @@ IPV6_ADDRESS = 'fd00:{area}1::1'
 # Application protocols by port
 PROTOCOLS = { 0 : 'ICMP', 21 : 'FTP', 22 : 'SSH', 25 : 'SMTP', 80 : 'HTTP', 443 : 'HTTPS' }
 
+# Timeout parameter
+TIMEOUT = 2
+
 # ICMP request packets
 ICMP4_PACKET = b'\x08\x00\xf7\xfe\x00\x00\x00\x01'
 ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 
-# Timeout parameter
-TIMEOUT = 2
+# Ping IPv4 destination
+async def ping4 ( destination ) :
+	# Create network socket
+	with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
+		# Send ping request
+		await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP4_PACKET, ( destination, 0 ) )
+		# Wait for reply
+		async with asyncio.timeout( TIMEOUT ) :
+			while True :
+				# Get reply
+				answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
+				# Check reply
+				if remote_address[ 0 ] == destination and answer[ 20:21 ] == b'\x00' : return True
 
-# Test function (TCP service or IPv4 ping or IPv6 ping)
+# Ping IPv6 destination
+async def ping6( destination ) :
+	# Create network socket
+	with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
+		# Send ping request
+		await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP6_PACKET, ( destination, 0 ) )
+		# Wait for reply
+		async with asyncio.timeout( TIMEOUT ) :
+			while True :
+				# Get reply
+				answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
+				# Check reply
+				if remote_address[ 0 ] == destination and answer[ :1 ] == b'\x81' : return True
+
+# Test function (TCP service or ping)
 async def test( address, port ) :
 	# Handle exceptions (connection or ping failed)
 	try :
@@ -47,35 +75,12 @@ async def test( address, port ) :
 			await asyncio.wait_for( asyncio.open_connection( host = address, port = port ), timeout = TIMEOUT )
 			# Connection done
 			return ( port, True )
-		# Test IPv4 ping
-		elif ipaddress.ip_address( address ).version == 4 :
-			# Create network socket
-			with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
-				# Send ping request
-				await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP4_PACKET, ( address, 0 ) )
-				# Wait for anwser
-				async with asyncio.timeout( TIMEOUT ) :
-					while True :
-						# Get ping reply
-						answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
-						# Check reply
-						if remote_address[ 0 ] == address and answer[ 20:21 ] == b'\x00' : return ( port, True )
-		# Test IPv6 ping
-		else :
-			# Create network socket
-			with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
-				# Send ping request
-				await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP6_PACKET, ( address, 0 ) )
-				# Wait for anwser
-				async with asyncio.timeout( TIMEOUT ) :
-					while True :
-						# Get ping reply
-						answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
-						# Check reply
-						if remote_address[ 0 ] == address and answer[ :1 ] == b'\x81' : return ( port, True )
+		# Test ping IPv4
+		elif ipaddress.ip_address( address ).version == 4 : return ( port , await ping4( address ) )
+		# Test ping IPv6
+		else : return ( port , await ping6( address ) )
 	# Failed test
-	except : pass
-	return ( port, False )
+	except : return ( port, False )
 
 # Test one area
 async def test_one_area( area_number ) :
