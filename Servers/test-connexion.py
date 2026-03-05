@@ -20,124 +20,64 @@ if os.geteuid() != 0 :
 	print( '\n-> Run this application as root (sudo)...')
 	exit()
 
-# Bash colors (red, green)
-COLORS = { False : '\033[41m', True : '\033[42m' }
+# Bash colors
+COLORS = {
+	False : '\033[41m', # Red
+	True : '\033[42m' # Green
+}
 
 # Destination IP addresses (coded with the area number)
 IPV4_ADDRESS = '203.0.113.{area}'
 IPV6_ADDRESS = 'fd00:{area}1::1'
 
 # Application protocols by port
-PROTOCOLS = { 0 : 'ICMP', 21 : 'FTP', 22 : 'SSH', 25 : 'SMTP', 80 : 'HTTP', 443 : 'HTTPS' }
+PROTOCOLS = {
+	0 : 'ICMP',
+	21 : 'FTP',
+	22 : 'SSH',
+	25 : 'SMTP',
+	80 : 'HTTP',
+	443 : 'HTTPS'
+}
 
 # Timeout parameter
 TIMEOUT = 2
 
-# ICMP request packets
-ICMP4_PACKET = b'\x08\x00\xf7\xfe\x00\x00\x00\x01'
-ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
-ICMP_PACKET = { 4 : ICMP4_PACKET, 6 : ICMP6_PACKET }
-
 # Socket parameters
-IP_FAMILY = { 4 : socket.AF_INET, 6 : socket.AF_INET6 }
-IP_PROTO = { 4 : socket.IPPROTO_ICMP, 6 : socket.IPPROTO_ICMPV6 }
+IP_FAMILY = {
+	4 : socket.AF_INET, # IPv4
+	6 : socket.AF_INET6 # IPv6
+}
+IP_TYPE = socket.SOCK_RAW | socket.SOCK_NONBLOCK
+IP_PROTO = {
+	4 : socket.IPPROTO_ICMP, # IPv4
+	6 : socket.IPPROTO_ICMPV6 # IPv6
+}
 
-# ICMP Protocol
-class ICMPProtocol( asyncio.Protocol ) :
-	# Initialisation
-	def __init__( self ) :
-		# Create a future event for the result
-		self.result = asyncio.get_event_loop().create_future()
-	# Send request
-	def connection_made( self, transport ) :
-		# Check if IPv4 or IPv6
-		self.ip_version = 4 if transport.get_extra_info( 'socket' ).family == socket.AF_INET else 6
-		# Send the request
-		transport.write( ICMP_PACKET[ self.ip_version ]  )
-	# Get reply
-	def data_received( self, data ) :
-		# Check the reply
-		if self.ip_version == 4 and data[ 20:21 ] == b'\x00' : self.result.set_result( True )
-		elif data[ :1 ] == b'\x81' : self.result.set_result( True )
+# ICMP request packets
+ICMP_PACKET = {
+	4 : b'\x08\x00\xf7\xfe\x00\x00\x00\x01', # IPv4
+	6 : b'\x80\x00\x7f\xfe\x00\x00\x00\x01' # IPv6
+}
 
 # Ping a host
-async def ping2( destination ) :
-	# Check if IPv4 or IPv6
-	ip_version = ipaddress.ip_address( destination ).version
-	# Create the socket
-	icmp_socket = socket.socket( IP_FAMILY[ ip_version ], socket.SOCK_RAW, IP_PROTO[ ip_version ] )
-	# Connect the socket to the destination
-	icmp_socket.connect( ( destination, 0 ) )
-	# Create the connection
-	transport, protocol = await asyncio.get_event_loop()._create_connection_transport( icmp_socket, ICMPProtocol, False, None )
-	# Wait for reply
-	try : await asyncio.wait_for( protocol.result, TIMEOUT )
-	# Return the result
-	except TimeoutError : return False
-	else : return True
-	# Close the connection
-	finally : transport.close()
-
-# Ping destination
-async def ping3 ( destination ) :
+async def ping ( destination ) :
 	# Get IP version
 	ip_version = ipaddress.ip_address( destination ).version
 	# Create network socket
-	with socket.socket( IP_FAMILY[ ip_version ], socket.SOCK_RAW | socket.SOCK_NONBLOCK, IP_PROTO[ ip_version ] ) as icmp_socket :
-		# Connect the socket to the destination
+	with socket.socket( IP_FAMILY[ ip_version ], IP_TYPE, IP_PROTO[ ip_version ] ) as icmp_socket :
+		# Connect the socket
 		icmp_socket.connect( ( destination, 0 ) )
 		# Send ping request
 		await asyncio.get_event_loop().sock_sendall( icmp_socket, ICMP_PACKET[ ip_version ] )
-		# Catch timeout exception
-		try :
-			# Wait for reply
-			reply = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = TIMEOUT )
-			# Check reply
+		# Wait for reply
+		try : reply = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = TIMEOUT )
+		# Timeout
+		except TimeoutError : return False
+		# Check reply
+		else : 
 			if ip_version == 4 and reply[ 20:21 ] == b'\x00' : return True
 			elif reply[ :1 ] == b'\x81' : return True
-		# Timeout
-		except TimeoutError : return False
-
-# Ping destination
-async def ping ( destination ) :
-	# Test ping IPv4
-	if ipaddress.ip_address( destination ).version == 4 : return await ping4( destination )
-	# or test ping IPv6
-	else : return await ping6( destination )
-
-# Ping IPv4 destination
-async def ping4 ( destination ) :
-	# Create network socket
-	with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
-		# Connect the socket to the destination
-		icmp_socket.connect( ( destination, 0 ) )
-		# Send ping request
-		await asyncio.get_event_loop().sock_sendall( icmp_socket, ICMP4_PACKET )
-		# Catch timeout exception
-		try :
-			# Wait for reply
-			reply = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = TIMEOUT )
-			# Check reply
-			if reply[ 20:21 ] == b'\x00' : return True
-		# Timeout
-		except TimeoutError : return False
-
-# Ping IPv6 destination
-async def ping6( destination ) :
-	# Create network socket
-	with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
-		# Connect the socket to the destination
-		icmp_socket.connect( ( destination, 0 ) )
-		# Send ping request
-		await asyncio.get_event_loop().sock_sendall( icmp_socket, ICMP6_PACKET )
-		# Catch timeout exception
-		try :
-			# Wait for reply
-			reply = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = TIMEOUT )
-			# Check reply
-			if reply[ :1 ] == b'\x81' : return True
-		# Timeout
-		except TimeoutError : return False
 
 # Connect to a TCP service
 async def connect( address, port ) :
@@ -153,7 +93,7 @@ async def test_host( address, port ) :
 	# Test TCP service
 	if port : result = await connect( address, port )
 	# Test ping
-	else : result = await ping2( address )
+	else : result = await ping( address )
 	# Return test result
 	return ( port, result )
 
