@@ -37,6 +37,13 @@ TIMEOUT = 2
 ICMP4_PACKET = b'\x08\x00\xf7\xfe\x00\x00\x00\x01'
 ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 
+# Ping destination
+async def ping ( destination ) :
+	# Test ping IPv4
+	if ipaddress.ip_address( destination ).version == 4 : return await ping4( destination )
+	# Test ping IPv6
+	else : return await ping6( destination )
+
 # Ping IPv4 destination
 async def ping4 ( destination ) :
 	# Create network socket
@@ -85,11 +92,11 @@ async def connect( address, port ) :
 # Test a host (TCP service or ping)
 async def test_host( address, port ) :
 	# Test TCP service
-	if port : return ( port, await connect( address, port ) )
+	if port : result = await connect( address, port )
 	# Test ping IPv4
-	elif ipaddress.ip_address( address ).version == 4 : return ( port , await ping4( address ) )
-	# Test ping IPv6
-	else : return ( port , await ping6( address ) )
+	else : result = await ping( address )
+	# Return test result
+	return ( port, result )
 
 # Test one area
 async def test_one_area( area_number ) :
