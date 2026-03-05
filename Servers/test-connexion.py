@@ -41,17 +41,16 @@ ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 async def ping4 ( destination ) :
 	# Create network socket
 	with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
+		# Connect the socket to the destination
+		icmp_socket.connect( ( destination, 0 ) )
 		# Send ping request
-		await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP4_PACKET, ( destination, 0 ) )
+		await asyncio.get_event_loop().sock_sendall( icmp_socket, ICMP4_PACKET )
 		# Catch timeout exception
 		try :
 			# Wait for reply
-			async with asyncio.timeout( TIMEOUT ) :
-				while True :
-					# Get reply
-					answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
-					# Check reply
-					if remote_address[ 0 ] == destination and answer[ 20:21 ] == b'\x00' : return True
+			reply = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = TIMEOUT )
+			# Check reply
+			if reply[ 20:21 ] == b'\x00' : return True
 		# Timeout
 		except TimeoutError : return False
 
@@ -59,17 +58,16 @@ async def ping4 ( destination ) :
 async def ping6( destination ) :
 	# Create network socket
 	with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
+		# Connect the socket to the destination
+		icmp_socket.connect( ( destination, 0 ) )
 		# Send ping request
-		await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP6_PACKET, ( destination, 0 ) )
+		await asyncio.get_event_loop().sock_sendall( icmp_socket, ICMP6_PACKET )
 		# Catch timeout exception
 		try :
 			# Wait for reply
-			async with asyncio.timeout( TIMEOUT ) :
-				while True :
-					# Get reply
-					answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
-					# Check reply
-					if remote_address[ 0 ] == destination and answer[ :1 ] == b'\x81' : return True
+			reply = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = TIMEOUT )
+			# Check reply
+			if reply[ :1 ] == b'\x81' : return True
 		# Timeout
 		except TimeoutError : return False
 
