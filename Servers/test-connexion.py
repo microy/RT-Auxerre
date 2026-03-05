@@ -43,13 +43,17 @@ async def ping4 ( destination ) :
 	with socket.socket( socket.AF_INET, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMP ) as icmp_socket :
 		# Send ping request
 		await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP4_PACKET, ( destination, 0 ) )
-		# Wait for reply
-		async with asyncio.timeout( TIMEOUT ) :
-			while True :
-				# Get reply
-				answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
-				# Check reply
-				if remote_address[ 0 ] == destination and answer[ 20:21 ] == b'\x00' : return True
+		# Catch timeout exception
+		try :
+			# Wait for reply
+			async with asyncio.timeout( TIMEOUT ) :
+				while True :
+					# Get reply
+					answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
+					# Check reply
+					if remote_address[ 0 ] == destination and answer[ 20:21 ] == b'\x00' : return True
+		# Timeout
+		except TimeoutError : return False
 
 # Ping IPv6 destination
 async def ping6( destination ) :
@@ -57,30 +61,37 @@ async def ping6( destination ) :
 	with socket.socket( socket.AF_INET6, socket.SOCK_RAW | socket.SOCK_NONBLOCK, socket.IPPROTO_ICMPV6 ) as icmp_socket :
 		# Send ping request
 		await asyncio.get_event_loop().sock_sendto( icmp_socket, ICMP6_PACKET, ( destination, 0 ) )
-		# Wait for reply
-		async with asyncio.timeout( TIMEOUT ) :
-			while True :
-				# Get reply
-				answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
-				# Check reply
-				if remote_address[ 0 ] == destination and answer[ :1 ] == b'\x81' : return True
+		# Catch timeout exception
+		try :
+			# Wait for reply
+			async with asyncio.timeout( TIMEOUT ) :
+				while True :
+					# Get reply
+					answer, remote_address = await asyncio.get_event_loop().sock_recvfrom( icmp_socket, 1024 )
+					# Check reply
+					if remote_address[ 0 ] == destination and answer[ :1 ] == b'\x81' : return True
+		# Timeout
+		except TimeoutError : return False
 
-# Test function (TCP service or ping)
-async def test( address, port ) :
-	# Handle exceptions (connection or ping failed)
+# Connect to a TCP service
+async def connect( address, port ) :
+	# Catch connection exception
 	try :
-		# Test TCP service
-		if port :
-			# Initiate a connection
-			await asyncio.wait_for( asyncio.open_connection( host = address, port = port ), timeout = TIMEOUT )
-			# Connection done
-			return ( port, True )
-		# Test ping IPv4
-		elif ipaddress.ip_address( address ).version == 4 : return ( port , await ping4( address ) )
-		# Test ping IPv6
-		else : return ( port , await ping6( address ) )
-	# Failed test
-	except : return ( port, False )
+		# Initiate a connection
+		await asyncio.wait_for( asyncio.open_connection( host = address, port = port ), timeout = TIMEOUT )
+		# Connection done
+		return True
+	# Connection failed
+	except OSError : return False
+
+# Test a host (TCP service or ping)
+async def test_host( address, port ) :
+	# Test TCP service
+	if port : return ( port, await connect( address, port ) )
+	# Test ping IPv4
+	elif ipaddress.ip_address( address ).version == 4 : return ( port , await ping4( address ) )
+	# Test ping IPv6
+	else : return ( port , await ping6( address ) )
 
 # Test one area
 async def test_one_area( area_number ) :
@@ -90,7 +101,7 @@ async def test_one_area( area_number ) :
 	# Create a task group
 	async with asyncio.TaskGroup() as task_group :
 		# Do all the tests for this area
-		tasks = [ task_group.create_task( test( ip, port ) ) for ip in [ ipv4_destination, ipv6_destination ] for port in [ *PROTOCOLS.keys() ] ]
+		tasks = [ task_group.create_task( test_host( address, port ) ) for address in [ ipv4_destination, ipv6_destination ] for port in [ *PROTOCOLS.keys() ] ]
 	# Return the results of the tasks for this area
 	return [ task.result() for task in tasks ]
 
@@ -131,12 +142,15 @@ try :
 		print( '	        ----------------- IPv4 -----------------    ----------------- IPv6 -----------------\n' )
 		for area, results in enumerate( tests ) :
 			# Print results for one area
-			print( f'    Area {area + 1} :    ' + ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ :6 ] ) + '   ' + ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ 6: ] ) )
+			print( f'    Area {area + 1} :    '
+				+ ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ :6 ] )
+				+ '   '
+				+ ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ 6: ] )
+			)
 		# Update time
 		print( '\nLast updated on', time.strftime( '%X' ) )
 		# Wait for next update
 		time.sleep( args.interval )
 		print( '\033[A\033[K', end='' )
 # Ctrl+C to stop the application
-except KeyboardInterrupt :
-	print( '\033[A\033[KExited.' )
+except KeyboardInterrupt : print( '\033[A\033[KExited.' )
