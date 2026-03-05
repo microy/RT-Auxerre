@@ -48,20 +48,22 @@ IP_FAMILY = {
 	4 : socket.AF_INET, # IPv4
 	6 : socket.AF_INET6 # IPv6
 }
-IP_TYPE = socket.SOCK_RAW | socket.SOCK_NONBLOCK
+IP_TYPE = socket.SOCK_RAW | socket.SOCK_NONBLOCK # Non blocking raw socket
 IP_PROTO = {
-	4 : socket.IPPROTO_ICMP, # IPv4
-	6 : socket.IPPROTO_ICMPV6 # IPv6
+	4 : socket.IPPROTO_ICMP, # ICMPv4
+	6 : socket.IPPROTO_ICMPV6 # ICMPv6
 }
 
 # ICMP request packets
 ICMP_PACKET = {
-	4 : b'\x08\x00\xf7\xfe\x00\x00\x00\x01', # IPv4
-	6 : b'\x80\x00\x7f\xfe\x00\x00\x00\x01' # IPv6
+	4 : b'\x08\x00\xf7\xfe\x00\x00\x00\x01', # ICMPv4
+	6 : b'\x80\x00\x7f\xfe\x00\x00\x00\x01' # ICMPv6
 }
 
 # Ping a host
 async def ping ( destination ) :
+	# Get event loop
+	loop = asyncio.get_event_loop()
 	# Get IP version
 	ip_version = ipaddress.ip_address( destination ).version
 	# Create network socket
@@ -69,9 +71,9 @@ async def ping ( destination ) :
 		# Connect the socket
 		icmp_socket.connect( ( destination, 0 ) )
 		# Send ping request
-		await asyncio.get_event_loop().sock_sendall( icmp_socket, ICMP_PACKET[ ip_version ] )
+		await loop.sock_sendall( icmp_socket, ICMP_PACKET[ ip_version ] )
 		# Wait for reply
-		try : reply = await asyncio.wait_for( asyncio.get_event_loop().sock_recv( icmp_socket, 1024 ), timeout = TIMEOUT )
+		try : reply = await asyncio.wait_for( loop.sock_recv( icmp_socket, 1024 ), timeout = TIMEOUT )
 		# Timeout
 		except TimeoutError : return False
 		# Check reply
@@ -105,7 +107,9 @@ async def test_one_area( area_number ) :
 	# Create a task group
 	async with asyncio.TaskGroup() as task_group :
 		# Do all the tests for this area
-		tasks = [ task_group.create_task( test_host( address, port ) ) for address in [ ipv4_destination, ipv6_destination ] for port in [ *PROTOCOLS.keys() ] ]
+		tasks = [ task_group.create_task( test_host( address, port ) )
+			for address in [ ipv4_destination, ipv6_destination ]
+			for port in [ *PROTOCOLS.keys() ] ]
 	# Return the results of the tasks for this area
 	return [ task.result() for task in tasks ]
 
@@ -130,10 +134,10 @@ parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Timeou
 parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
 parser.add_argument( '-6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
 args = parser.parse_args()
-# Register destination IP addresses
+# Get destination IP addresses
 IPV4_ADDRESS = args.destination4
 IPV6_ADDRESS = args.destination6
-# Register timeout parameter
+# Get timeout parameter
 TIMEOUT = args.timeout
 # Loop through the tests
 try :
