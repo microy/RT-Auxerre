@@ -37,6 +37,41 @@ TIMEOUT = 2
 ICMP4_PACKET = b'\x08\x00\xf7\xfe\x00\x00\x00\x01'
 ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 
+# ICMP Protocol
+class ICMPProtocol( asyncio.Protocol ) :
+	# Initialisation
+	def __init__( self ) :
+		# Create a future for the result
+		self.result = asyncio.get_event_loop().create_future()
+	# Send request
+	def connection_made( self, transport ) :
+		# Check if IPv4 or IPv6
+		self.ipv4 = transport.get_extra_info( 'socket' ).family == socket.AF_INET
+		# Send the request
+		transport.write( ICMP4_PACKET if self.ipv4 else ICMP6_PACKET )
+	# Get reply
+	def data_received( self, data ) :
+		# Check the reply
+		if self.ipv4 and data[ 20:21 ] == b'\x00' :	self.result.set_result( True )
+		elif data[ :1 ] == b'\x81' : self.result.set_result( True )
+
+# Ping a host
+async def ping2( destination ) :
+	# Check if IPv4 or IPv6
+	ipv4 = ipaddress.ip_address( destination ).version == 4
+	# Create the socket
+	if ipv4 : icmp_socket = socket.socket( socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP )
+	else : icmp_socket = socket.socket( socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6 )
+	# Connect the socket to the destination
+	icmp_socket.connect( ( destination, 0 ) )
+	# Create the connection
+	transport, protocol = await asyncio.get_event_loop()._create_connection_transport( icmp_socket, ICMPProtocol, False, None )
+	# Wait for reply
+	try : await asyncio.wait_for( protocol.result, TIMEOUT )
+	# Return the result
+	except TimeoutError : return False
+	else : return True
+
 # Ping destination
 async def ping ( destination ) :
 	# Test ping IPv4
@@ -80,21 +115,19 @@ async def ping6( destination ) :
 
 # Connect to a TCP service
 async def connect( address, port ) :
-	# Catch connection exception
-	try :
-		# Initiate a connection
-		await asyncio.wait_for( asyncio.open_connection( host = address, port = port ), timeout = TIMEOUT )
-		# Connection done
-		return True
+	# Initiate a connection
+	try : await asyncio.wait_for( asyncio.open_connection( host = address, port = port ), timeout = TIMEOUT )
 	# Connection failed
 	except OSError : return False
+	# Connection done
+	else : return True
 
 # Test a host (TCP service or ping)
 async def test_host( address, port ) :
 	# Test TCP service
 	if port : result = await connect( address, port )
 	# Test ping
-	else : result = await ping( address )
+	else : result = await ping2( address )
 	# Return test result
 	return ( port, result )
 
