@@ -118,11 +118,11 @@ async def ping6( destination ) :
 # Connect to a TCP service
 async def connect( address, port ) :
 	# Initiate a connection
-	try : await asyncio.wait_for( asyncio.open_connection( host = address, port = port ), timeout = TIMEOUT )
+	try : _, writer = await asyncio.wait_for( asyncio.open_connection( host = address, port = port ), timeout = TIMEOUT )
 	# Connection failed
 	except OSError : return False
 	# Connection done
-	else : return True
+	else : writer.close(); return True
 
 # Test a host (TCP service or ping)
 async def test_host( address, port ) :
