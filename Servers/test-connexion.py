@@ -71,6 +71,8 @@ async def ping2( destination ) :
 	# Return the result
 	except TimeoutError : return False
 	else : return True
+	# Close the connection
+	finally : transport.close()
 
 # Ping destination
 async def ping ( destination ) :
