@@ -41,7 +41,7 @@ ICMP6_PACKET = b'\x80\x00\x7f\xfe\x00\x00\x00\x01'
 async def ping ( destination ) :
 	# Test ping IPv4
 	if ipaddress.ip_address( destination ).version == 4 : return await ping4( destination )
-	# Test ping IPv6
+	# or test ping IPv6
 	else : return await ping6( destination )
 
 # Ping IPv4 destination
@@ -93,7 +93,7 @@ async def connect( address, port ) :
 async def test_host( address, port ) :
 	# Test TCP service
 	if port : result = await connect( address, port )
-	# Test ping IPv4
+	# Test ping
 	else : result = await ping( address )
 	# Return test result
 	return ( port, result )
