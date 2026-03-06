@@ -36,6 +36,7 @@ PROTOCOLS = {
 	21 : 'FTP',
 	22 : 'SSH',
 	25 : 'SMTP',
+	53 : 'DNS',
 	80 : 'HTTP',
 	443 : 'HTTPS'
 }
@@ -77,9 +78,9 @@ async def ping ( destination ) :
 		# Timeout
 		except TimeoutError : return False
 		# Check reply
-		else : 
-			if ip_version == 4 and reply[ 20:21 ] == b'\x00' : return True
-			elif reply[ :1 ] == b'\x81' : return True
+		if ip_version == 4 and reply[ 20:21 ] == b'\x00' : return True
+		elif reply[ :1 ] == b'\x81' : return True
+		else : return False
 
 # Connect to a TCP service
 async def connect( address, port ) :
@@ -147,13 +148,13 @@ try :
 		tests = asyncio.run( test_all_areas( args.number ) )
 		# Clear screen and print results
 		print( '\033[H\033[J\nRT Auxerre Lab Networks\n' )
-		print( '	        ----------------- IPv4 -----------------    ----------------- IPv6 -----------------\n' )
+		print( '	        -------------------- IPv4 --------------------    -------------------- IPv6 --------------------\n' )
 		for area, results in enumerate( tests ) :
 			# Print results for one area
 			print( f'    Area {area + 1} :    '
-				+ ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ :6 ] )
+				+ ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ :7 ] )
 				+ '   '
-				+ ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ 6: ] )
+				+ ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ 7: ] )
 			)
 		# Update time
 		print( '\nLast updated on', time.strftime( '%X' ) )
