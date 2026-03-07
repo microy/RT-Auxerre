@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 #
-# Service reachability test application
+# Network Service Monitoring Application
 # https://github.com/microy/rt-auxerre
 # Copyright (c) 2026 Michaël Roy
 # usage : $ sudo ./test-connexion.py
@@ -26,7 +26,7 @@ COLORS = {
 	True : '\033[42m' # Green
 }
 
-# Destination IP addresses (coded with the area number)
+# Destination IP addresses with the area number
 IPV4_ADDRESS = '203.0.113.{area}'
 IPV6_ADDRESS = 'fd00:{area}1::1'
 
@@ -40,6 +40,7 @@ PROTOCOLS = {
 	80 : 'HTTP',
 	443 : 'HTTPS'
 }
+PROTOCOL_NUMBER = int(len(PROTOCOLS.keys()))
 
 # Timeout parameter
 TIMEOUT = 2
@@ -49,11 +50,11 @@ IP_FAMILY = {
 	4 : socket.AF_INET, # IPv4
 	6 : socket.AF_INET6 # IPv6
 }
-IP_TYPE = socket.SOCK_RAW | socket.SOCK_NONBLOCK # Non blocking raw socket
 IP_PROTO = {
 	4 : socket.IPPROTO_ICMP, # ICMPv4
 	6 : socket.IPPROTO_ICMPV6 # ICMPv6
 }
+IP_TYPE = socket.SOCK_RAW | socket.SOCK_NONBLOCK # Non blocking raw socket
 
 # ICMP request packets
 ICMP_PACKET = {
@@ -62,30 +63,30 @@ ICMP_PACKET = {
 }
 
 # Ping a host
-async def ping ( destination ) :
+async def ping( destination ) :
 	# Get event loop
 	loop = asyncio.get_event_loop()
 	# Get IP version
 	ip_version = ipaddress.ip_address( destination ).version
 	# Create network socket
-	with socket.socket( IP_FAMILY[ ip_version ], IP_TYPE, IP_PROTO[ ip_version ] ) as icmp_socket :
+	with socket.socket( IP_FAMILY[ip_version], IP_TYPE, IP_PROTO[ip_version] ) as icmp_socket :
 		# Connect the socket
-		icmp_socket.connect( ( destination, 0 ) )
+		icmp_socket.connect( (destination, 0) )
 		# Send ping request
-		await loop.sock_sendall( icmp_socket, ICMP_PACKET[ ip_version ] )
+		await loop.sock_sendall( icmp_socket, ICMP_PACKET[ip_version] )
 		# Wait for reply
-		try : reply = await asyncio.wait_for( loop.sock_recv( icmp_socket, 1024 ), timeout = TIMEOUT )
+		try : reply = await asyncio.wait_for( loop.sock_recv(icmp_socket, 1024), timeout=TIMEOUT )
 		# Timeout
 		except TimeoutError : return False
 		# Check reply
-		if ip_version == 4 and reply[ 20:21 ] == b'\x00' : return True
-		elif reply[ :1 ] == b'\x81' : return True
+		if ip_version==4 and reply[20:21]==b'\x00' : return True
+		elif reply[:1]==b'\x81' : return True
 		else : return False
 
 # Connect to a TCP service
 async def connect( address, port ) :
 	# Initiate a connection
-	try : _, writer = await asyncio.wait_for( asyncio.open_connection( host = address, port = port ), timeout = TIMEOUT )
+	try : _, writer = await asyncio.wait_for( asyncio.open_connection(host=address, port=port), timeout=TIMEOUT )
 	# Connection failed
 	except OSError : return False
 	# Connection done
@@ -103,8 +104,8 @@ async def test_host( address, port ) :
 # Test one area
 async def test_one_area( area_number ) :
 	# Modify the destination addresses according to the area number
-	ipv4_destination = IPV4_ADDRESS.format( area = area_number )
-	ipv6_destination = IPV6_ADDRESS.format( area = area_number )
+	ipv4_destination = IPV4_ADDRESS.format( area=area_number )
+	ipv6_destination = IPV6_ADDRESS.format( area=area_number )
 	# Create a task group
 	async with asyncio.TaskGroup() as task_group :
 		# Do all the tests for this area
@@ -119,47 +120,50 @@ async def test_all_areas( area_number ) :
 	# Create a task group
 	async with asyncio.TaskGroup() as task_group :
 		# Test all areas
-		tasks = [ task_group.create_task( test_one_area( i + 1 ) ) for i in range( area_number ) ]
+		tasks = [ task_group.create_task( test_one_area(i+1) ) for i in range(area_number) ]
 	# Return the results of the tasks for each area
 	return [ task.result() for task in tasks ]
 
-#
-# Main function
-#
+# Format the test result for display
+def output( test ) :
+	if test[1] : return f'{COLORS[test[1]]} {PROTOCOLS[test[0]]} \033[0m'
+	else : return f'{COLORS[test[1]]} {PROTOCOLS[test[0]]} \033[0m'
 
-# Command line parameters
-parser = argparse.ArgumentParser( description='Checks the incoming traffic of the different network areas' )
-parser.add_argument( '-n', '--number', type=int, default=8,	help='Number of areas (default to 8)' )
-parser.add_argument( '-i', '--interval', type=int, default=30, help='Refresh interval (default to 30 seconds)' )
-parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Timeout for the tests (default to {TIMEOUT} seconds)' )
-parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
-parser.add_argument( '-6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
-args = parser.parse_args()
-# Get destination IP addresses
-IPV4_ADDRESS = args.destination4
-IPV6_ADDRESS = args.destination6
-# Get timeout parameter
-TIMEOUT = args.timeout
-# Loop through the tests
-try :
-	while True :
-		# Run the tests
-		print( 'Updating...' )
-		tests = asyncio.run( test_all_areas( args.number ) )
-		# Clear screen and print results
-		print( '\033[H\033[J\nRT Auxerre Lab Networks\n' )
-		print( '	        -------------------- IPv4 --------------------    -------------------- IPv6 --------------------\n' )
-		for area, results in enumerate( tests ) :
-			# Print results for one area
-			print( f'    Area {area + 1} :    '
-				+ ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ :7 ] )
-				+ '   '
-				+ ''.join( f'{COLORS[ test[ 1 ] ]} {PROTOCOLS[ test[ 0 ] ]} \033[0m ' for test in results[ 7: ] )
-			)
-		# Update time
-		print( '\nLast updated on', time.strftime( '%X' ) )
-		# Wait for next update
-		time.sleep( args.interval )
-		print( '\033[A\033[K', end='' )
-# Ctrl+C to stop the application
-except KeyboardInterrupt : print( '\033[A\033[KExited.' )
+# Main application
+if __name__ == "__main__" :
+	# Command line parameters
+	parser = argparse.ArgumentParser( description='Checks the incoming traffic of the different network areas' )
+	parser.add_argument( '-n', '--number', type=int, default=8,	help='Number of areas (default to 8)' )
+	parser.add_argument( '-i', '--interval', type=int, default=30, help='Refresh interval (default to 30 seconds)' )
+	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Timeout for the tests (default to {TIMEOUT} seconds)' )
+	parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
+	parser.add_argument( '-6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
+	args = parser.parse_args()
+	# Get destination IP addresses
+	IPV4_ADDRESS = args.destination4
+	IPV6_ADDRESS = args.destination6
+	# Get timeout parameter
+	TIMEOUT = args.timeout
+	# Loop through the tests
+	try :
+		while True :
+			# Run the tests
+			print( 'Updating...' )
+			tests = asyncio.run( test_all_areas( args.number ) )
+			# Clear screen and print results
+			print( '\033[H\033[J\nIUT RT Auxerre - Network Lab Monitoring\n' )
+			print( '	        -------------------- IPv4 --------------------    -------------------- IPv6 --------------------\n' )
+			for area, results in enumerate( tests ) :
+				# Print results for one area
+				print( f'    Area {area + 1} :    '
+					+ ' '.join( output( test ) for test in results[ :PROTOCOL_NUMBER ] )
+					+ '    '
+					+ ' '.join( output( test ) for test in results[ PROTOCOL_NUMBER: ] )
+				)
+			# Update time
+			print( '\nLast updated on', time.strftime( '%X' ) )
+			# Wait for next update
+			time.sleep( args.interval )
+			print( '\033[A\033[K', end='' )
+	# Ctrl+C to stop the application
+	except KeyboardInterrupt : print( '\033[A\033[KExited.' )
