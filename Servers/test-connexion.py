@@ -20,6 +20,9 @@ if os.geteuid() != 0 :
 	print( '\n-> Run this application as root (sudo)...')
 	exit()
 
+# Number of areas to test
+AREA_NUMBER = 8
+
 # Destination IP addresses with the area number
 IPV4_ADDRESS = '203.0.113.{area}'
 IPV6_ADDRESS = 'fd00:{area}1::1'
@@ -99,10 +102,10 @@ async def test_host( address, port ) :
 	return ( port, result )
 
 # Test one area
-async def test_one_area( area_number ) :
+async def test_one_area( area ) :
 	# Modify the destination addresses according to the area number
-	ipv4_destination = IPV4_ADDRESS.format( area=area_number )
-	ipv6_destination = IPV6_ADDRESS.format( area=area_number )
+	ipv4_destination = IPV4_ADDRESS.format( area=area )
+	ipv6_destination = IPV6_ADDRESS.format( area=area )
 	# Create a task group
 	async with asyncio.TaskGroup() as task_group :
 		# Do all the tests for this area
@@ -113,11 +116,11 @@ async def test_one_area( area_number ) :
 	return [ task.result() for task in tasks ]
 
 # Test all areas
-async def test_all_areas( area_number ) :
+async def test_all_areas() :
 	# Create a task group
 	async with asyncio.TaskGroup() as task_group :
 		# Test all areas
-		tasks = [ task_group.create_task( test_one_area(i+1) ) for i in range(area_number) ]
+		tasks = [ task_group.create_task( test_one_area(i+1) ) for i in range( AREA_NUMBER ) ]
 	# Return the results of the tasks for each area
 	return [ task.result() for task in tasks ]
 
@@ -126,16 +129,40 @@ def output( test ) :
 	if test[1] : return f'\033[42m {PROTOCOLS[test[0]]} \033[0m'
 	else : return f'\033[41m {PROTOCOLS[test[0]]} \033[0m'
 
+# Monitoring application
+async def main() :
+	# Start monitoring
+	while True :
+		# Run the tests
+		print( '\nUpdating...\n' )
+		tests = await test_all_areas()
+		# Clear screen and print results
+		print( '\033[H\033[J\nIUT RT Auxerre - Network Lab Monitoring\n' )
+		print( '	        -------------------- IPv4 --------------------    -------------------- IPv6 --------------------\n' )
+		for area, results in enumerate( tests ) :
+			# Print results for one area
+			print( f'    Area {area + 1} :    '
+				+ ' '.join( output(test) for test in results[:PROTOCOL_NUMBER] )
+				+ '    '
+				+ ' '.join( output(test) for test in results[PROTOCOL_NUMBER:] )
+			)
+		# Update time
+		print( f'\nLast updated on {time.strftime('%X')}' )
+		# Wait for next update
+		await asyncio.sleep( INTERVAL )
+
 # Main application
-if __name__ == "__main__" :
+if __name__ == '__main__' :
 	# Command line parameters
-	parser = argparse.ArgumentParser( description='Checks the incoming traffic of the different network areas' )
-	parser.add_argument( '-n', '--number', type=int, default=8,	help='Number of areas (default to 8)' )
+	parser = argparse.ArgumentParser( description='Monitor lab network services' )
+	parser.add_argument( '-n', '--number', type=int, default=AREA_NUMBER, help=f'Area number (default to {AREA_NUMBER})' )
 	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help=f'Refresh interval (default to {INTERVAL} seconds)' )
-	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Timeout for the tests (default to {TIMEOUT} seconds)' )
+	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Test timeout (default to {TIMEOUT} seconds)' )
 	parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
 	parser.add_argument( '-6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
 	args = parser.parse_args()
+	# Get area number
+	AREA_NUMBER = args.number
 	# Get destination IP addresses
 	IPV4_ADDRESS = args.destination4
 	IPV6_ADDRESS = args.destination6
@@ -143,25 +170,7 @@ if __name__ == "__main__" :
 	INTERVAL = args.interval
 	# Get timeout parameter
 	TIMEOUT = args.timeout
-	# Loop through the tests
-	try :
-		while True :
-			# Run the tests
-			print( '\nUpdating...\n' )
-			tests = asyncio.run( test_all_areas( args.number ) )
-			# Clear screen and print results
-			print( '\033[H\033[J\nIUT RT Auxerre - Network Lab Monitoring\n' )
-			print( '	        -------------------- IPv4 --------------------    -------------------- IPv6 --------------------\n' )
-			for area, results in enumerate( tests ) :
-				# Print results for one area
-				print( f'    Area {area + 1} :    '
-					+ ' '.join( output(test) for test in results[:PROTOCOL_NUMBER] )
-					+ '    '
-					+ ' '.join( output(test) for test in results[PROTOCOL_NUMBER:] )
-				)
-			# Update time
-			print( f'\nLast updated on {time.strftime('%X')}' )
-			# Wait for next update
-			time.sleep( INTERVAL )
+	# Run the monitoring application
+	try : asyncio.run( main() )
 	# Ctrl+C to stop the application
 	except KeyboardInterrupt : print( '\n' )
