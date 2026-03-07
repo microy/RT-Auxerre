@@ -149,7 +149,7 @@ async def main() :
 # Main application
 if __name__ == '__main__' :
 	# Command line parameters
-	parser = argparse.ArgumentParser( description='Monitor lab network services' )
+	parser = argparse.ArgumentParser( description='Monitor network lab services' )
 	parser.add_argument( '-n', '--number', type=int, default=AREA_NUMBER, help=f'Area number (default to {AREA_NUMBER})' )
 	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help=f'Refresh interval (default to {INTERVAL} seconds)' )
 	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Network test timeout (default to {TIMEOUT} seconds)' )

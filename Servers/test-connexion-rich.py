@@ -143,7 +143,7 @@ async def main() :
 			print( '\n\nUpdating...\n' )
 			tests = await test_all_areas()
 			# Create the table for result display
-			table = Table( title='\n[bold blue]IUT RT Auxerre - Network Lab Monitoring\n', box=box.ROUNDED )
+			table = Table( title='\n[bold white]IUT RT Auxerre - Network Lab Monitoring\n', box=box.ROUNDED )
 			table.add_column( 'Area', style='blue bold', justify='center' )
 			table.add_column( 'IPv4', justify='center' )
 			table.add_column( 'IPv6', justify='center' )
@@ -165,7 +165,7 @@ async def main() :
 # Main application
 if __name__ == '__main__' :
 	# Command line parameters
-	parser = argparse.ArgumentParser( description='Monitor lab network services' )
+	parser = argparse.ArgumentParser( description='Monitor network lab services' )
 	parser.add_argument( '-n', '--number', type=int, default=AREA_NUMBER, help=f'Area number (default to {AREA_NUMBER})' )
 	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help=f'Refresh interval (default to {INTERVAL} seconds)' )
 	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Network test timeout (default to {TIMEOUT} seconds)' )
