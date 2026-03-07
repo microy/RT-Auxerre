@@ -15,11 +15,6 @@ import os
 import socket
 import time
 
-# Check if root
-if os.geteuid() != 0 :
-	print( '\n-> Run this application as root (sudo)...')
-	exit()
-
 # Number of areas to test
 AREA_NUMBER = 8
 
@@ -157,10 +152,12 @@ if __name__ == '__main__' :
 	parser = argparse.ArgumentParser( description='Monitor lab network services' )
 	parser.add_argument( '-n', '--number', type=int, default=AREA_NUMBER, help=f'Area number (default to {AREA_NUMBER})' )
 	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help=f'Refresh interval (default to {INTERVAL} seconds)' )
-	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Test timeout (default to {TIMEOUT} seconds)' )
+	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Network test timeout (default to {TIMEOUT} seconds)' )
 	parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
 	parser.add_argument( '-6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
 	args = parser.parse_args()
+	# Check if root
+	if os.geteuid() != 0 : print( '\n-> Run this application as root (sudo)...'); exit()
 	# Get area number
 	AREA_NUMBER = args.number
 	# Get destination IP addresses
