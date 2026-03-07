@@ -84,7 +84,7 @@ async def ping( destination ) :
 		except TimeoutError : return False
 		# Check reply
 		if ip_version==4 and reply[20:21]==b'\x00' : return True
-		elif reply[:1]==b'\x81' : return True
+		elif ip_version==6 and reply[:1]==b'\x81' : return True
 		else : return False
 
 # Connect to a TCP service
