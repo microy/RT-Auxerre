@@ -20,12 +20,6 @@ if os.geteuid() != 0 :
 	print( '\n-> Run this application as root (sudo)...')
 	exit()
 
-# Bash colors
-COLORS = {
-	False : '\033[41m', # Red
-	True : '\033[42m' # Green
-}
-
 # Destination IP addresses with the area number
 IPV4_ADDRESS = '203.0.113.{area}'
 IPV6_ADDRESS = 'fd00:{area}1::1'
@@ -42,7 +36,10 @@ PROTOCOLS = {
 }
 PROTOCOL_NUMBER = int(len(PROTOCOLS.keys()))
 
-# Timeout parameter
+# Update interval time
+INTERVAL = 10
+
+# Test timeout
 TIMEOUT = 2
 
 # Socket parameters
@@ -80,7 +77,7 @@ async def ping( destination ) :
 		except TimeoutError : return False
 		# Check reply
 		if ip_version==4 and reply[20:21]==b'\x00' : return True
-		elif reply[:1]==b'\x81' : return True
+		elif ip_version==6 and reply[:1]==b'\x81' : return True
 		else : return False
 
 # Connect to a TCP service
@@ -126,15 +123,15 @@ async def test_all_areas( area_number ) :
 
 # Format the test result for display
 def output( test ) :
-	if test[1] : return f'{COLORS[test[1]]} {PROTOCOLS[test[0]]} \033[0m'
-	else : return f'{COLORS[test[1]]} {PROTOCOLS[test[0]]} \033[0m'
+	if test[1] : return f'\033[42m {PROTOCOLS[test[0]]} \033[0m'
+	else : return f'\033[41m {PROTOCOLS[test[0]]} \033[0m'
 
 # Main application
 if __name__ == "__main__" :
 	# Command line parameters
 	parser = argparse.ArgumentParser( description='Checks the incoming traffic of the different network areas' )
 	parser.add_argument( '-n', '--number', type=int, default=8,	help='Number of areas (default to 8)' )
-	parser.add_argument( '-i', '--interval', type=int, default=30, help='Refresh interval (default to 30 seconds)' )
+	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help=f'Refresh interval (default to {INTERVAL} seconds)' )
 	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Timeout for the tests (default to {TIMEOUT} seconds)' )
 	parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
 	parser.add_argument( '-6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
@@ -142,13 +139,15 @@ if __name__ == "__main__" :
 	# Get destination IP addresses
 	IPV4_ADDRESS = args.destination4
 	IPV6_ADDRESS = args.destination6
+	# Get update interval parameter
+	INTERVAL = args.interval
 	# Get timeout parameter
 	TIMEOUT = args.timeout
 	# Loop through the tests
 	try :
 		while True :
 			# Run the tests
-			print( 'Updating...' )
+			print( '\nUpdating...\n' )
 			tests = asyncio.run( test_all_areas( args.number ) )
 			# Clear screen and print results
 			print( '\033[H\033[J\nIUT RT Auxerre - Network Lab Monitoring\n' )
@@ -156,14 +155,13 @@ if __name__ == "__main__" :
 			for area, results in enumerate( tests ) :
 				# Print results for one area
 				print( f'    Area {area + 1} :    '
-					+ ' '.join( output( test ) for test in results[ :PROTOCOL_NUMBER ] )
+					+ ' '.join( output(test) for test in results[:PROTOCOL_NUMBER] )
 					+ '    '
-					+ ' '.join( output( test ) for test in results[ PROTOCOL_NUMBER: ] )
+					+ ' '.join( output(test) for test in results[PROTOCOL_NUMBER:] )
 				)
 			# Update time
-			print( '\nLast updated on', time.strftime( '%X' ) )
+			print( f'\nLast updated on {time.strftime('%X')}' )
 			# Wait for next update
-			time.sleep( args.interval )
-			print( '\033[A\033[K', end='' )
+			time.sleep( INTERVAL )
 	# Ctrl+C to stop the application
-	except KeyboardInterrupt : print( '\033[A\033[KExited.' )
+	except KeyboardInterrupt : print( '\n' )
