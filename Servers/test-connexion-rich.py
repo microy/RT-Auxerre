@@ -43,7 +43,10 @@ PROTOCOLS = {
 }
 PROTOCOL_NUMBER = int(len(PROTOCOLS.keys()))
 
-# Timeout parameter
+# Update interval time
+INTERVAL = 10
+
+# Test timeout
 TIMEOUT = 2
 
 # Socket parameters
@@ -135,7 +138,7 @@ if __name__ == '__main__' :
 	# Command line parameters
 	parser = argparse.ArgumentParser( description='Checks the incoming traffic of the different network areas' )
 	parser.add_argument( '-n', '--number', type=int, default=8,	help='Number of areas (default to 8)' )
-	parser.add_argument( '-i', '--interval', type=int, default=30, help='Refresh interval (default to 30 seconds)' )
+	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help=f'Refresh interval (default to {INTERVAL} seconds)' )
 	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Timeout for the tests (default to {TIMEOUT} seconds)' )
 	parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
 	parser.add_argument( '-6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
@@ -143,6 +146,8 @@ if __name__ == '__main__' :
 	# Get destination IP addresses
 	IPV4_ADDRESS = args.destination4
 	IPV6_ADDRESS = args.destination6
+	# Get update interval parameter
+	INTERVAL = args.interval
 	# Get timeout parameter
 	TIMEOUT = args.timeout
 	# Get the terminal
@@ -153,6 +158,7 @@ if __name__ == '__main__' :
 		with console.status('') :
 			while True :
 				# Run the tests
+				print( '\nUpdating...\n' )
 				tests = asyncio.run( test_all_areas(args.number) )
 				# Clear the screen
 				console.clear()
@@ -172,7 +178,6 @@ if __name__ == '__main__' :
 				# Print update time
 				console.print( f'\nLast updated on {time.strftime('%X')}\n' )
 				# Wait for the next update
-				time.sleep( args.interval )
+				time.sleep( INTERVAL )
 	# Ctrl+C to stop the application
-	except KeyboardInterrupt :
-		console.clear()
+	except KeyboardInterrupt : console.clear()
