@@ -4,7 +4,6 @@
 # Network Service Monitoring Application
 # https://github.com/microy/rt-auxerre
 # Copyright (c) 2026 Michaël Roy
-# usage : $ sudo ./test-connexion.py
 #
 
 # Dependencies
