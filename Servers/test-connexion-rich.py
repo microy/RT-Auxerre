@@ -4,7 +4,6 @@
 # Network Service Monitoring Application
 # https://github.com/microy/rt-auxerre
 # Copyright (c) 2026 Michaël Roy
-# usage : $ sudo ./test-connexion-rich.py
 #
 
 # Dependencies
@@ -143,8 +142,8 @@ async def main() :
 			print( '\n\nUpdating...\n' )
 			tests = await test_all_areas()
 			# Create the table for result display
-			table = Table( title='\n[bold white]IUT RT Auxerre - Network Lab Monitoring\n', box=box.ROUNDED )
-			table.add_column( 'Area', style='blue bold', justify='center' )
+			table = Table( title='\n[bold white]IUT RT Auxerre - Network Lab Monitoring[/bold white]\n', box=box.ROUNDED, header_style='bold white', style='bold white' )
+			table.add_column( 'Area', style='bold white', justify='center' )
 			table.add_column( 'IPv4', justify='center' )
 			table.add_column( 'IPv6', justify='center' )
 			# Add the results to the table
