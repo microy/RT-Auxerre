@@ -35,43 +35,45 @@ PROTOCOLS = {
 }
 PROTOCOL_NUMBER = int(len(PROTOCOLS.keys()))
 
-# Socket parameters
+# Ping socket parameters
 IP_FAMILY = {
-	4 : socket.AF_INET, # IPv4
-	6 : socket.AF_INET6 # IPv6
+	4: socket.AF_INET, # IPv4
+	6: socket.AF_INET6 # IPv6
 }
 IP_PROTO = {
-	4 : socket.IPPROTO_ICMP, # ICMPv4
-	6 : socket.IPPROTO_ICMPV6 # ICMPv6
+	4: socket.IPPROTO_ICMP, # ICMPv4
+	6: socket.IPPROTO_ICMPV6 # ICMPv6
 }
-IP_TYPE = socket.SOCK_RAW | socket.SOCK_NONBLOCK # Non blocking raw socket
-
-# ICMP request packets
-ICMP_PACKET = {
-	4 : b'\x08\x00\xf7\xfe\x00\x00\x00\x01', # ICMPv4
-	6 : b'\x80\x00\x7f\xfe\x00\x00\x00\x01' # ICMPv6
+ICMP_ECHO_REQUEST = {
+	4: b'\x08\x00\xf7\xfe\x00\x00\x00\x01', # ICMPv4 echo request
+	6: b'\x80\x00\x7f\xfe\x00\x00\x00\x01' # ICMPv6 echo request
 }
+ICMP_ECHO_REPLY = {
+	4: b'\x00', # ICMPv4 echo reply
+	6: b'\x81' # ICMPv6 echo reply
+}
+SOCKET_TYPE = socket.SOCK_RAW | socket.SOCK_NONBLOCK # Non blocking raw socket
 
 # Ping a host
 async def ping( destination ) :
-	# Get event loop
+	# Get asyncio event loop
 	loop = asyncio.get_event_loop()
 	# Get IP version
 	ip_version = ipaddress.ip_address( destination ).version
 	# Create network socket
-	with socket.socket( IP_FAMILY[ip_version], IP_TYPE, IP_PROTO[ip_version] ) as icmp_socket :
+	with socket.socket( IP_FAMILY[ip_version], SOCKET_TYPE, IP_PROTO[ip_version] ) as icmp_socket :
 		# Connect the socket
 		icmp_socket.connect( (destination, 0) )
 		# Send ping request
-		await loop.sock_sendall( icmp_socket, ICMP_PACKET[ip_version] )
+		await loop.sock_sendall( icmp_socket, ICMP_ECHO_REQUEST[ip_version] )
 		# Wait for reply
 		try : reply = await asyncio.wait_for( loop.sock_recv(icmp_socket, 1024), timeout=TIMEOUT )
 		# Timeout
 		except TimeoutError : return False
+		# Get ICMP type field
+		icmp_type = reply[20:21] if ip_version==4 else reply[:1]
 		# Check reply
-		if ip_version==4 and reply[20:21]==b'\x00' : return True
-		elif ip_version==6 and reply[:1]==b'\x81' : return True
-		else : return False
+		return True if icmp_type == ICMP_ECHO_REPLY[ip_version] else False
 
 # Connect to a TCP service
 async def connect( address, port ) :
