@@ -119,8 +119,7 @@ async def test_all_areas() :
 
 # Format the test result for display
 def output( test ) :
-	if test[1] : return f'\033[42m {PROTOCOLS[test[0]]} \033[0m'
-	else : return f'\033[41m {PROTOCOLS[test[0]]} \033[0m'
+	return f'{'\033[42m' if test[1] else '\033[41m'} {PROTOCOLS[test[0]]} \033[0m'
 
 # Monitoring application
 async def main() :
