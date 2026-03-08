@@ -16,28 +16,24 @@ import time
 
 # Number of areas to test
 AREA_NUMBER = 8
-
 # Destination IP addresses with the area number
 IPV4_ADDRESS = '203.0.113.{area}'
 IPV6_ADDRESS = 'fd00:{area}1::1'
-
-# Application protocols by port
-PROTOCOLS = {
-	0 : 'ICMP',
-	21 : 'FTP',
-	22 : 'SSH',
-	25 : 'SMTP',
-	53 : 'DNS',
-	80 : 'HTTP',
-	443 : 'HTTPS'
-}
-PROTOCOL_NUMBER = int(len(PROTOCOLS.keys()))
-
 # Update interval time
 INTERVAL = 10
-
 # Test timeout
 TIMEOUT = 2
+# Application protocols by port
+PROTOCOLS = {
+	0: 'ICMP',
+	21: 'FTP',
+	22: 'SSH',
+	25: 'SMTP',
+	53: 'DNS',
+	80: 'HTTP',
+	443: 'HTTPS'
+}
+PROTOCOL_NUMBER = int(len(PROTOCOLS.keys()))
 
 # Socket parameters
 IP_FAMILY = {
@@ -148,12 +144,12 @@ async def main() :
 # Main application
 if __name__ == '__main__' :
 	# Command line parameters
-	parser = argparse.ArgumentParser( description='Monitor network lab services' )
-	parser.add_argument( '-n', '--number', type=int, default=AREA_NUMBER, help=f'Area number (default to {AREA_NUMBER})' )
-	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help=f'Refresh interval (default to {INTERVAL} seconds)' )
-	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Network test timeout (default to {TIMEOUT} seconds)' )
-	parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
-	parser.add_argument( '-6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
+	parser = argparse.ArgumentParser( description='Network Lab Monitoring Application', formatter_class=argparse.ArgumentDefaultsHelpFormatter )
+	parser.add_argument( '-n', '--number', type=int, default=AREA_NUMBER, help=f'Area number' )
+	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help=f'Refresh interval' )
+	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Network test timeout' )
+	parser.add_argument( '-4', '--destination4', default=IPV4_ADDRESS, help=f'IPv4 destination address' )
+	parser.add_argument( '-6', '--destination6', default=IPV6_ADDRESS, help=f'IPv6 destination address' )
 	args = parser.parse_args()
 	# Check if root
 	if os.geteuid() != 0 : print( '\n-> Run this application as root (sudo)...'); exit()
