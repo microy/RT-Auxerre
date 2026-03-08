@@ -80,8 +80,7 @@ async def ping( destination ) :
 		# Get ICMP type field
 		icmp_type = reply[20:21] if ip_version==4 else reply[:1]
 		# Check reply
-		if icmp_type == ICMP_ECHO_REPLY[ip_version] : return True
-		else : return False
+		return True if icmp_type == ICMP_ECHO_REPLY[ip_version] else False
 
 # Connect to a TCP service
 async def connect( address, port ) :
