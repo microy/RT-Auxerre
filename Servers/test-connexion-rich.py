@@ -23,65 +23,64 @@ from rich.table import Table
 
 # Number of areas to test
 AREA_NUMBER = 8
-
 # Destination IP addresses with the area number
 IPV4_ADDRESS = '203.0.113.{area}'
 IPV6_ADDRESS = 'fd00:{area}1::1'
-
+# Update interval time
+INTERVAL = 10
+# Test timeout
+TIMEOUT = 2
 # Application protocols by port
 PROTOCOLS = {
-	0 : 'ICMP',
-	21 : 'FTP',
-	22 : 'SSH',
-	25 : 'SMTP',
-	53 : 'DNS',
-	80 : 'HTTP',
-	443 : 'HTTPS'
+	0: 'ICMP',
+	21: 'FTP',
+	22: 'SSH',
+	25: 'SMTP',
+	53: 'DNS',
+	80: 'HTTP',
+	443: 'HTTPS'
 }
 PROTOCOL_NUMBER = int(len(PROTOCOLS.keys()))
 
-# Update interval time
-INTERVAL = 10
-
-# Test timeout
-TIMEOUT = 2
-
-# Socket parameters
+# Ping socket parameters
 IP_FAMILY = {
-	4 : socket.AF_INET, # IPv4
-	6 : socket.AF_INET6 # IPv6
+	4: socket.AF_INET, # IPv4
+	6: socket.AF_INET6 # IPv6
 }
 IP_PROTO = {
-	4 : socket.IPPROTO_ICMP, # ICMPv4
-	6 : socket.IPPROTO_ICMPV6 # ICMPv6
+	4: socket.IPPROTO_ICMP, # ICMPv4
+	6: socket.IPPROTO_ICMPV6 # ICMPv6
 }
-IP_TYPE = socket.SOCK_RAW | socket.SOCK_NONBLOCK # Non blocking raw socket
-
-# ICMP request packets
-ICMP_PACKET = {
-	4 : b'\x08\x00\xf7\xfe\x00\x00\x00\x01', # ICMPv4
-	6 : b'\x80\x00\x7f\xfe\x00\x00\x00\x01' # ICMPv6
+ICMP_ECHO_REQUEST = {
+	4: b'\x08\x00\xf7\xfe\x00\x00\x00\x01', # ICMPv4 echo request
+	6: b'\x80\x00\x7f\xfe\x00\x00\x00\x01' # ICMPv6 echo request
 }
+ICMP_ECHO_REPLY = {
+	4: b'\x00', # ICMPv4 echo reply
+	6: b'\x81' # ICMPv6 echo reply
+}
+SOCKET_TYPE = socket.SOCK_RAW | socket.SOCK_NONBLOCK # Non blocking raw socket
 
 # Ping a host
 async def ping( destination ) :
-	# Get event loop
+	# Get asyncio event loop
 	loop = asyncio.get_event_loop()
 	# Get IP version
 	ip_version = ipaddress.ip_address( destination ).version
 	# Create network socket
-	with socket.socket( IP_FAMILY[ip_version], IP_TYPE, IP_PROTO[ip_version] ) as icmp_socket :
+	with socket.socket( IP_FAMILY[ip_version], SOCKET_TYPE, IP_PROTO[ip_version] ) as icmp_socket :
 		# Connect the socket
 		icmp_socket.connect( (destination, 0) )
 		# Send ping request
-		await loop.sock_sendall( icmp_socket, ICMP_PACKET[ip_version] )
+		await loop.sock_sendall( icmp_socket, ICMP_ECHO_REQUEST[ip_version] )
 		# Wait for reply
 		try : reply = await asyncio.wait_for( loop.sock_recv(icmp_socket, 1024), timeout=TIMEOUT )
 		# Timeout
 		except TimeoutError : return False
+		# Get ICMP type field
+		icmp_type = reply[20:21] if ip_version==4 else reply[:1]
 		# Check reply
-		if ip_version==4 and reply[20:21]==b'\x00' : return True
-		elif ip_version==6 and reply[:1]==b'\x81' : return True
+		if icmp_type == ICMP_ECHO_REPLY[ip_version] : return True
 		else : return False
 
 # Connect to a TCP service
@@ -164,12 +163,12 @@ async def main() :
 # Main application
 if __name__ == '__main__' :
 	# Command line parameters
-	parser = argparse.ArgumentParser( description='Monitor network lab services' )
-	parser.add_argument( '-n', '--number', type=int, default=AREA_NUMBER, help=f'Area number (default to {AREA_NUMBER})' )
-	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help=f'Refresh interval (default to {INTERVAL} seconds)' )
-	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Network test timeout (default to {TIMEOUT} seconds)' )
-	parser.add_argument( '-4', '--destination4', type=str, default=IPV4_ADDRESS, help=f'IPv4 destination address (default to {IPV4_ADDRESS})' )
-	parser.add_argument( '-6', '--destination6', type=str, default=IPV6_ADDRESS, help=f'IPv6 destination address (default to {IPV6_ADDRESS})' )
+	parser = argparse.ArgumentParser( description='Network Lab Monitoring Application', formatter_class=argparse.ArgumentDefaultsHelpFormatter )
+	parser.add_argument( '-n', '--number', type=int, default=AREA_NUMBER, help=f'Area number' )
+	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help=f'Refresh interval' )
+	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Network test timeout' )
+	parser.add_argument( '-4', '--destination4', default=IPV4_ADDRESS, help=f'IPv4 destination address' )
+	parser.add_argument( '-6', '--destination6', default=IPV6_ADDRESS, help=f'IPv6 destination address' )
 	args = parser.parse_args()
 	# Check if root
 	if os.geteuid() != 0 : print( '\n-> Run this application as root (sudo)...'); exit()
