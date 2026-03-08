@@ -163,33 +163,36 @@ class MonitoringApp( App ) :
 	# Initialize the application
 	async def on_mount( self ) :
 		self.title = 'IUT RT Auxerre - Network Lab Monitoring'
+		self.screen.styles.background = '0%'
 		# Setup the interface
 		table = self.query_one( '#table' )
 		table.cursor_type = None
+		table.add_column( 'Area', width=6 )
+		table.add_column( 'IPv4' )
+		table.add_column( 'IPv6' )
 		# Run the tests
 		self.run_worker( self.update_results(), exclusive=True )
 	# Update the test results
 	async def update_results( self ) :
 		while True :
-			self.query_one( '#footer2' ).update( 'Updating...' )
+#			self.query_one( '#footer2' ).update( 'Updating...' )
+			self.query_one( '#footer2' ).loading = True
 			# Run the tests
 			self.tests = await test_all_areas()
 			# Record last update time
 			self.display_results()
 			# Record last update time
+			self.query_one( '#footer2' ).loading = False
 			self.query_one( '#footer2' ).update( f'Last updated on [bold cyan]{time.strftime('%X')}' )
 			# Wait for the next update
 			await asyncio.sleep( INTERVAL )
 	def display_results( self ) :
-#		self.display_results1()
+		self.display_results1()
 		self.display_results2()
 	def display_results1( self ) :
 		# Clear the table
 		table = self.query_one( '#table' )
-		table.clear(columns=True)
-		table.add_column( 'Area', width=6 )
-		table.add_column( 'IPv4', width=None )
-		table.add_column( 'Ipv6', width=None )
+		table.clear()
 		# Add the results to the table
 		for area, results in enumerate( self.tests ) :
 			result = [ output( test ) for test in results ]
