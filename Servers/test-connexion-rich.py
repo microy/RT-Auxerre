@@ -125,28 +125,29 @@ async def test_all_areas() :
 
 # Richified the test result
 def output( test ) :
-	if test[1] : return Panel( f'{PROTOCOLS[test[0]]}', style='green', padding=(-1,0) )
-	else : return Panel( f'{PROTOCOLS[test[0]]}', style='red dim', padding=(-1,0) )
+	return Panel( f'{PROTOCOLS[test[0]]}', style=f'{'green' if test[1] else 'red dim'}', padding=(-1,0) )
 
 # Monitoring application
 async def main() :
-	# Get the console
+	# Get the console and clear it
 	console = Console()
+	console.clear()
 	# Start console status
-	with console.status('') :
+	with console.status('') as status :
 		# Start monitoring
 		while True :
+			# Update status
+			status.update( 'Updating...', spinner='earth' )
 			# Run the tests
-			print( '\n\nUpdating...\n' )
 			tests = await test_all_areas()
 			# Create the table for result display
-			table = Table( title='\n[bold white]IUT RT Auxerre - Network Lab Monitoring[/bold white]\n', box=box.ROUNDED, header_style='bold white', style='white' )
-			table.add_column( 'Area', style='bold white', justify='center' )
+			table = Table( title='\n[bold white]IUT RT Auxerre - Network Lab Monitoring[/bold white]\n', box=box.ROUNDED, header_style='bold', style='white', caption=' ' )
+			table.add_column( 'Area', style='bold', justify='center' )
 			table.add_column( 'IPv4', justify='center' )
 			table.add_column( 'IPv6', justify='center' )
 			# Add the results to the table
 			for area, results in enumerate( tests ) :
-				result = [ output( test ) for test in results ]
+				result = [ output(test) for test in results ]
 				table.add_row( Align( f'{area + 1}', align='center', vertical='middle' ),
 					Columns( result[:PROTOCOL_NUMBER] ),
 					Columns( result[PROTOCOL_NUMBER:] ) )
@@ -154,8 +155,8 @@ async def main() :
 			console.clear()
 			# Print the results
 			console.print( table )
-			# Print update time
-			console.print( f'\nLast updated on {time.strftime('%X')}\n' )
+			# Update status
+			status.update( f'Last updated on [bold]{time.strftime('%X')}', spinner='clock' )
 			# Wait for the next update
 			await asyncio.sleep( INTERVAL )
 
