@@ -143,16 +143,16 @@ async def main() :
 			# Run the tests
 			tests = await test_all_areas()
 			# Create the table for result display
-			table = Table( title='\n[bold white]IUT RT Auxerre - Network Lab Monitoring[/bold white]\n', box=box.ROUNDED, header_style='bold', style='white', caption=' ' )
-			table.add_column( 'Area', style='bold', justify='center' )
+			table = Table( title='\n[bold white]IUT RT Auxerre - Network Lab Monitoring[/bold white]\n', box=box.HORIZONTALS, header_style='bold', style='white', caption=' ' )
+			table.add_column( 'Area', style='bold', justify='center', vertical='middle' )
 			table.add_column( 'IPv4', justify='center' )
 			table.add_column( 'IPv6', justify='center' )
 			# Add the results to the table
 			for area, results in enumerate( tests ) :
 				result = [ output(test) for test in results ]
-				table.add_row( Align( f'{area + 1}', align='center', vertical='middle' ),
-					Columns( result[:PROTOCOL_NUMBER] ),
-					Columns( result[PROTOCOL_NUMBER:] ) )
+				table.add_row( f'{area + 1}',
+					Align( Columns( result[:PROTOCOL_NUMBER] ), align='center' ),
+					Align( Columns( result[PROTOCOL_NUMBER:] ), align='center' ) )
 			# Clear the screen
 			console.clear()
 			# Print the results
