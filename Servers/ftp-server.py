@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 #
-# FTP Server Application
+# FTP Server Application (IPv4 + IPv6)
 # https://github.com/microy/rt-auxerre
 # Copyright (c) 2024-2026 Michaël Roy
 # usage : $ sudo ./ftp-server.py
@@ -44,6 +44,10 @@ handler = FTPHandler
 handler.authorizer = authorizer
 handler.banner = FTP_MESSAGE
 
+# Print banner
+print( '\n~~~ IUT RT Auxerre - FTP Server    ~~~~' )
+print( 'Press Ctrl+C to stop the application...\n' )
+
 # Start the FTP server
-server = FTPServer( ( '::', 21 ), handler )
+server = FTPServer( ('::', 21), handler )
 server.serve_forever()
