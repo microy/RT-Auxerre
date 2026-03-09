@@ -6,6 +6,12 @@
 # Copyright (c) 2026 Michaël Roy
 #
 
+#
+# Required external dependency : Rich
+#	package : python-rich (Arch) or python3-rich (Ubuntu)
+#   or python -m pip install rich
+#
+
 # Dependencies
 import argparse
 import asyncio
