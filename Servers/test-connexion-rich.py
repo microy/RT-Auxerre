@@ -13,8 +13,7 @@ import ipaddress
 import os
 import socket
 import time
-from rich import box
-from rich import print
+from rich import box, print
 from rich.align import Align
 from rich.columns import Columns
 from rich.console import Console
