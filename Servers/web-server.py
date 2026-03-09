@@ -1,16 +1,29 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 
 #
-# Web Server Application (HTTP and HTTPS)
+# Web Server Application (HTTP + HTTPS with IPv4 + IPv6)
 # https://github.com/microy/rt-auxerre
-# Copyright (c) 2023-2024 Michaël Roy
+# Copyright (c) 2023-2026 Michaël Roy
 # usage : $ sudo ./web-server.py
 #
 
+#
+# Required external dependency :
+#	openssl
+#
+
 # External modules
-import http.server, socket, ssl
-import os, platform, re, signal, sys, tempfile
-import subprocess, threading
+import os
+import platform
+import re
+import signal
+import socket
+import subprocess
+import sys
+import tempfile
+import threading
+from http import HTTPStatus
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer, ThreadingHTTPSServer
 
 # Check if root
 if os.geteuid() != 0 :
@@ -24,15 +37,12 @@ WEBPAGE = rf'''
 <head>
 	<meta charset="UTF-8">
 	<link rel="icon" href="data:,"/>
-	<title>RT Auxerre Web Server</title>
+	<title>IUT RT Auxerre - Web Server</title>
 </head>
 <body style="font-family: sans-serif;">
 	<br/>
-	<h1 style="text-align: center;">
-🇷​​​​​🇹​​​​​ 🇦​​​​​🇺​​​​​🇽​​​​​🇪​​​​​🇷​​​​​🇷​​​​​🇪​​​​​
-	</h1>
-	<br/>
-	<br/>
+	<h1 style="text-align: center;">IUT RT Auxerre - Web Server</h1>
+	<br/><br/>
 	<p><b>Bienvenue sur la machine :</b> <code>{platform.node()}</code></p>
 	<p><b>L'adresse du serveur est :</b> <code>{{}}</code></p>
 	<p><b>Vous êtes connectés en :</b> <code>{{}}</code></p>
@@ -42,7 +52,10 @@ WEBPAGE = rf'''
 '''
 
 # Protocol list
-PROTOCOL = { 80 : 'HTTP', 443 : 'HTTPS' }
+PROTOCOL = {
+	80: 'HTTP',
+	443: 'HTTPS'
+}
 
 # Cleanup an IP Address
 # If it is an IPv4-mapped to IPv6 address, remove ::ffff:
@@ -54,15 +67,19 @@ CERTFILE = tempfile.NamedTemporaryFile()
 KEYFILE = tempfile.NamedTemporaryFile()
 
 # Generate a TLS certificate and key
-SSLCOMMAND = f'openssl req -x509 -newkey rsa:2048 -nodes -days 365 -out {CERTFILE.name} -keyout {KEYFILE.name} -subj /CN=rt-auxerre.fr'
+SSLCOMMAND = f'openssl req -x509 -newkey rsa:2048 -noenc -days 365 -out {CERTFILE.name} -keyout {KEYFILE.name} -subj /CN=rt-auxerre.fr'
 subprocess.run( SSLCOMMAND.split(), capture_output=True )
 
 # HTTP Server class to handle IPv6
-class HTTPServer( http.server.HTTPServer ) :
+class HTTPServer( ThreadingHTTPServer ) :
+	address_family = socket.AF_INET6
+
+# HTTPS Server class to handle IPv6
+class HTTPSServer( ThreadingHTTPSServer ) :
 	address_family = socket.AF_INET6
 
 # HTTP request handler class to send a simple web page
-class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
+class HTTPRequestHandler( SimpleHTTPRequestHandler ) :
 	# Handle GET request
 	def do_GET( self ) :
 		# Get server IP address
@@ -76,12 +93,12 @@ class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
 		self.web_protocol = PROTOCOL[ self.server.server_port ]
 		# Redirect if necessary
 		if self.path != '/' :
-			self.send_response( http.HTTPStatus.MOVED_PERMANENTLY )
+			self.send_response( HTTPStatus.MOVED_PERMANENTLY )
 			self.send_header( 'Location', '/' )
 			self.end_headers()
 			return None
 		# Send the web page
-		self.send_response( http.HTTPStatus.OK )
+		self.send_response( HTTPStatus.OK )
 		self.send_header( 'Content-type', 'text/html' )
 		self.end_headers()
 		self.wfile.write( bytes( WEBPAGE.format( server_ip_address, self.web_protocol, self.client_ip_address ), 'utf-8' ) )
@@ -90,17 +107,13 @@ class HTTPRequestHandler( http.server.SimpleHTTPRequestHandler ) :
 		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.client_ip_address} - ( {self.web_protocol} )\n' )
 
 # Create the HTTP server
-httpd = HTTPServer( ( '::', 80 ), HTTPRequestHandler )
+httpd = HTTPServer( ('::', 80), HTTPRequestHandler )
 
 # Create the HTTPS server
-httpsd = HTTPServer( ( '::', 443 ), HTTPRequestHandler )
-# Wrap the server with TLS
-ssl_context = ssl.SSLContext( ssl.PROTOCOL_TLS_SERVER )
-ssl_context.load_cert_chain( certfile=CERTFILE.name, keyfile=KEYFILE.name )
-httpsd.socket = ssl_context.wrap_socket( httpsd.socket, server_side=True )
+httpsd = HTTPSServer( ('::', 443), HTTPRequestHandler, certfile=CERTFILE.name, keyfile=KEYFILE.name )
 
 # Print banner
-print( '\n~~~~~~~~    HTTP(S) Server    ~~~~~~~~~' )
+print( '\n~~~ IUT RT Auxerre - Web Server    ~~~~' )
 print( 'Press Ctrl+C to stop the application...\n' )
 
 # Handle exceptions such as Ctrl+C
