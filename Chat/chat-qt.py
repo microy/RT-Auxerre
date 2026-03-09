@@ -1,13 +1,19 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 
 #
 # Multicast Chat Application using Qt
 # https://github.com/microy/RT-Auxerre
-# Copyright (c) 2024 Michaël Roy
+# Copyright (c) 2024-2026 Michaël Roy
 #
 
 # External dependencies
-import asyncio, base64, logging, re, socket, sys, threading
+import asyncio
+import base64
+import logging
+import re
+import socket
+import sys
+import threading
 from PySide6.QtGui import Qt, QKeySequence, QShortcut
 from PySide6.QtWidgets import QApplication, QCheckBox, QHBoxLayout, QLabel, QLineEdit, QRadioButton, QTextEdit, QVBoxLayout, QWidget
 
@@ -42,13 +48,13 @@ class ChatProtocol :
 		self.message_callback( message, address )
 
 # Multicast Chat using Qt
-class QMulticastChat( QWidget ) :
+class MulticastChat( QWidget ) :
 	# Initialize the window
 	def __init__( self ) :
 		# Initialize the class
 		QWidget.__init__( self )
 		# Set the window title
-		self.setWindowTitle( 'RT Auxerre Multicast Chat' )
+		self.setWindowTitle( 'IUT RT Auxerre - Multicast Chat' )
 		# Set fixed window size
 		self.setFixedWidth( 800 )
 		self.setFixedHeight( 600 )
@@ -117,6 +123,6 @@ class QMulticastChat( QWidget ) :
 # Main program
 if __name__ == "__main__" :
 	application = QApplication( sys.argv )
-	window = QMulticastChat()
+	window = MulticastChat()
 	window.show()
 	sys.exit( application.exec() )

@@ -1,13 +1,17 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 
 #
 # Multicast Chat Application using Textual
 # https://github.com/microy/RT-Auxerre
-# Copyright (c) 2024 Michaël Roy
+# Copyright (c) 2024-2026 Michaël Roy
 #
 
 # External dependencies
-import asyncio, base64, logging, re, socket
+import asyncio
+import base64
+import logging
+import re
+import socket
 from textual.app import App
 from textual.widgets import Footer, Input, RichLog, Static
 
@@ -42,7 +46,7 @@ class ChatProtocol :
 		self.message_callback( message, address )
 
 # Multicast Chat using Textual
-class TMulticastChat( App ) :
+class MulticastChat( App ) :
 	# Auto focus
 	AUTO_FOCUS = '#input'
 	# Keyboard bindings
@@ -81,7 +85,7 @@ class TMulticastChat( App ) :
 	ENABLE_COMMAND_PALETTE = False
 	# Compose the interface
 	def compose( self ) :
-		yield Static( 'RT Auxerre Multicast Chat', id='header' )
+		yield Static( 'IUT RT Auxerre - Multicast Chat', id='header' )
 		yield RichLog( markup=True, wrap=True, classes="border", id='messages' )
 		yield Input( classes="border", id='input' )
 		yield Footer( id='footer' )
@@ -137,5 +141,5 @@ class TMulticastChat( App ) :
 
 # Main application
 if __name__ == "__main__" :
-	app = TMulticastChat()
+	app = MulticastChat()
 	app.run()
