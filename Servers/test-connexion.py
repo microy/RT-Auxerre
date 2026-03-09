@@ -45,6 +45,10 @@ IP_PROTO = {
 	4: socket.IPPROTO_ICMP, # ICMPv4
 	6: socket.IPPROTO_ICMPV6 # ICMPv6
 }
+ICMP_TYPE = {
+	4: slice(20, 21), # ICMPv4 type field
+	6: slice(0, 1), # ICMPv6 type field
+}
 ICMP_ECHO_REQUEST = {
 	4: b'\x08\x00\xf7\xfe\x00\x00\x00\x01', # ICMPv4 echo request
 	6: b'\x80\x00\x7f\xfe\x00\x00\x00\x01' # ICMPv6 echo request
@@ -71,10 +75,8 @@ async def ping( destination ) :
 		try : reply = await asyncio.wait_for( loop.sock_recv(icmp_socket, 1024), timeout=TIMEOUT )
 		# Timeout
 		except TimeoutError : return False
-		# Get ICMP type field
-		icmp_type = reply[20:21] if ip_version==4 else reply[:1]
 		# Check reply
-		return True if icmp_type == ICMP_ECHO_REPLY[ip_version] else False
+		return True if reply[ICMP_TYPE[ip_version]] == ICMP_ECHO_REPLY[ip_version] else False
 
 # Connect to a TCP service
 async def connect( address, port ) :
