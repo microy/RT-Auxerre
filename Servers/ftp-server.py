@@ -1,9 +1,9 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 
 #
 # FTP Server Application
 # https://github.com/microy/rt-auxerre
-# Copyright (c) 2024 Michaël Roy
+# Copyright (c) 2024-2026 Michaël Roy
 # usage : $ sudo ./ftp-server.py
 #
 
@@ -13,7 +13,9 @@
 #
 
 # External modules
-import os, platform, tempfile
+import os
+import platform
+import tempfile
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
@@ -24,7 +26,7 @@ if os.geteuid() != 0 :
 	exit()
 
 # Simple FTP message
-FTP_MESSAGE = rf'Bienvenue sur le serveur FTP RT Auxerre de la machine {platform.node()} !'
+FTP_MESSAGE = rf'IUT RT Auxerre - Bienvenue sur le serveur FTP de la machine {platform.node()} !'
 
 # Create a temporary directory for the FTP server
 FTP_DIRECTORY = tempfile.TemporaryDirectory()
