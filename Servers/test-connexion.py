@@ -1,7 +1,7 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 
 #
-# Network Service Monitoring Application
+# Network Lab Monitoring Application
 # https://github.com/microy/rt-auxerre
 # Copyright (c) 2026 Michaël Roy
 #
@@ -47,7 +47,7 @@ IP_PROTO = {
 }
 ICMP_TYPE = {
 	4: slice(20, 21), # ICMPv4 type field
-	6: slice(0, 1), # ICMPv6 type field
+	6: slice(0, 1) # ICMPv6 type field
 }
 ICMP_ECHO_REQUEST = {
 	4: b'\x08\x00\xf7\xfe\x00\x00\x00\x01', # ICMPv4 echo request
