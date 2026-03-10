@@ -76,18 +76,20 @@ async def ping( destination ) :
 	loop = asyncio.get_event_loop()
 	# Get IP version
 	ip_version = ipaddress.ip_address( destination ).version
-	# Create network socket
-	with socket.socket( IP_FAMILY[ip_version], SOCKET_TYPE, IP_PROTO[ip_version] ) as icmp_socket :
-		# Connect the socket
-		icmp_socket.connect( (destination, 0) )
-		# Send ping request
-		await loop.sock_sendall( icmp_socket, ICMP_ECHO_REQUEST[ip_version] )
-		# Wait for reply
-		try : reply = await asyncio.wait_for( loop.sock_recv(icmp_socket, 1024), timeout=TIMEOUT )
-		# Timeout
-		except TimeoutError : return False
-		# Check reply
-		return True if reply[ICMP_TYPE[ip_version]] == ICMP_ECHO_REPLY[ip_version] else False
+	# Catch errors
+	try:
+		# Create network socket
+		with socket.socket( IP_FAMILY[ip_version], SOCKET_TYPE, IP_PROTO[ip_version] ) as icmp_socket :
+			# Connect the socket
+			icmp_socket.connect( (destination, 0) )
+			# Send ping request
+			await loop.sock_sendall( icmp_socket, ICMP_ECHO_REQUEST[ip_version] )
+			# Wait for reply
+			reply = await asyncio.wait_for( loop.sock_recv(icmp_socket, 1024), timeout=TIMEOUT )
+	# Connection failed
+	except OSError: return False
+	# Check reply
+	else: return True if reply[ICMP_TYPE[ip_version]] == ICMP_ECHO_REPLY[ip_version] else False
 
 # Connect to a TCP service
 async def connect( address, port ) :
