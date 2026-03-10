@@ -60,7 +60,7 @@ ICMP_ECHO_REPLY = {
 SOCKET_TYPE = socket.SOCK_RAW | socket.SOCK_NONBLOCK # Non blocking raw socket
 
 # Ping a host
-async def ping( destination ) :
+async def ping( destination ):
 	# Get asyncio event loop
 	loop = asyncio.get_event_loop()
 	# Get IP version
@@ -68,12 +68,12 @@ async def ping( destination ) :
 	# Catch errors
 	try:
 		# Create network socket
-		with socket.socket( IP_FAMILY[ip_version], SOCKET_TYPE, IP_PROTO[ip_version] ) as icmp_socket :
+		with socket.socket( IP_FAMILY[ip_version], SOCKET_TYPE, IP_PROTO[ip_version] ) as icmp_socket:
 			# Connect the socket
 			icmp_socket.connect( (destination, 0) )
 			# Send ping request
 			await loop.sock_sendall( icmp_socket, ICMP_ECHO_REQUEST[ip_version] )
-			# Wait for reply
+			# Get reply
 			reply = await asyncio.wait_for( loop.sock_recv(icmp_socket, 1024), timeout=TIMEOUT )
 	# Connection failed
 	except OSError: return False
@@ -81,30 +81,30 @@ async def ping( destination ) :
 	else: return True if reply[ICMP_TYPE[ip_version]] == ICMP_ECHO_REPLY[ip_version] else False
 
 # Connect to a TCP service
-async def connect( address, port ) :
+async def connect( address, port ):
 	# Initiate a connection
-	try : _, writer = await asyncio.wait_for( asyncio.open_connection(host=address, port=port), timeout=TIMEOUT )
+	try: _, writer = await asyncio.wait_for( asyncio.open_connection(host=address, port=port), timeout=TIMEOUT )
 	# Connection failed
-	except OSError : return False
+	except OSError: return False
 	# Connection done
-	else : writer.close(); return True
+	else: writer.close(); return True
 
 # Test a host (TCP service or ping)
-async def test_host( address, port ) :
+async def test_host( address, port ):
 	# Test TCP service
-	if port : result = await connect( address, port )
+	if port: result = await connect( address, port )
 	# Test ping
-	else : result = await ping( address )
+	else: result = await ping( address )
 	# Return test result
 	return ( port, result )
 
 # Test one area
-async def test_one_area( area ) :
+async def test_one_area( area ):
 	# Modify the destination addresses according to the area number
 	ipv4_destination = IPV4_ADDRESS.format( area=area )
 	ipv6_destination = IPV6_ADDRESS.format( area=area )
 	# Create a task group
-	async with asyncio.TaskGroup() as task_group :
+	async with asyncio.TaskGroup() as task_group:
 		# Do all the tests for this area
 		tasks = [ task_group.create_task( test_host( address, port ) )
 			for address in [ ipv4_destination, ipv6_destination ]
@@ -113,29 +113,29 @@ async def test_one_area( area ) :
 	return [ task.result() for task in tasks ]
 
 # Test all areas
-async def test_all_areas() :
+async def test_all_areas():
 	# Create a task group
-	async with asyncio.TaskGroup() as task_group :
+	async with asyncio.TaskGroup() as task_group:
 		# Test all areas
 		tasks = [ task_group.create_task( test_one_area(i+1) ) for i in range( AREA_NUMBER ) ]
 	# Return the results of the tasks for each area
 	return [ task.result() for task in tasks ]
 
 # Format the test result for display
-def output( test ) :
+def output( test ):
 	return f'{'\033[42m' if test[1] else '\033[41m'} {PROTOCOLS[test[0]]} \033[0m'
 
 # Monitoring application
-async def main() :
+async def main():
 	# Start monitoring
-	while True :
+	while True:
 		# Run the tests
 		print( '\nUpdating...\n' )
 		tests = await test_all_areas()
 		# Clear screen and print results
 		print( '\033[H\033[J\nIUT RT Auxerre - Network Lab Monitoring\n' )
 		print( '	        -- IPv4 ' + '-'*PROTOCOL_DISPLAY + '       -- IPv6 ' + '-'*PROTOCOL_DISPLAY + '\n' )
-		for area, results in enumerate( tests ) :
+		for area, results in enumerate( tests ):
 			# Print results for one area
 			print( f'   Area {area + 1}   |   '
 				+ ' '.join( output(test) for test in results[:PROTOCOL_NUMBER] )
@@ -148,7 +148,7 @@ async def main() :
 		await asyncio.sleep( INTERVAL )
 
 # Main application
-if __name__ == '__main__' :
+if __name__ == '__main__':
 	# Command line parameters
 	parser = argparse.ArgumentParser( description='Network Lab Monitoring Application', formatter_class=argparse.ArgumentDefaultsHelpFormatter )
 	parser.add_argument( '-n', '--number', type=int, default=AREA_NUMBER, help=f'Area number' )
@@ -158,7 +158,7 @@ if __name__ == '__main__' :
 	parser.add_argument( '-6', '--destination6', default=IPV6_ADDRESS, help=f'IPv6 destination address' )
 	args = parser.parse_args()
 	# Check if root
-	if os.geteuid() != 0 : print( '\n-> Run this application as root (sudo)...'); exit()
+	if os.geteuid() != 0: print( '\n-> Run this application as root (sudo)...'); exit()
 	# Get area number
 	AREA_NUMBER = args.number
 	# Get destination IP addresses
@@ -169,6 +169,6 @@ if __name__ == '__main__' :
 	# Get timeout parameter
 	TIMEOUT = args.timeout
 	# Run the monitoring application
-	try : asyncio.run( main() )
+	try: asyncio.run( main() )
 	# Ctrl+C to stop the application
-	except KeyboardInterrupt : print( '\n' )
+	except KeyboardInterrupt: print( '\n' )
