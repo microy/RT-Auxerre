@@ -81,7 +81,7 @@ async def ping( destination ):
 		# Create network socket
 		with socket.socket( IP_FAMILY[ip_version], SOCKET_TYPE, IP_PROTO[ip_version] ) as icmp_socket:
 			# Connect the socket
-			icmp_socket.connect( (destination, 0) )
+			await loop.sock_connect( icmp_socket, (destination, None) )
 			# Send ping request
 			await loop.sock_sendall( icmp_socket, ICMP_ECHO_REQUEST[ip_version] )
 			# Get reply
