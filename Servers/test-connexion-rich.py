@@ -28,6 +28,29 @@ try:
 	from rich.table import Table
 except ImportError as error: print( error ); exit()
 
+# Fix Rich columns expand=False bug
+from rich.measure import Measurement, measure_renderables
+from rich.padding import Padding
+class ColumnsFixed( Columns ):
+	def __rich_measure__( self, console: "Console", options: "ConsoleOptions" ) -> "Measurement":
+		title = self.title
+		_, right, _, left = Padding.unpack(self.padding)
+		padding = left + right
+		renderables = [*self.renderables, title] if title else [*self.renderables]
+		maximum_width = sum(
+			measure_renderables(
+				console,
+				options.update_width(options.max_width - padding - 2),
+				[renderable],
+			).maximum
+			for renderable in renderables
+		)
+		if self.width is None:
+			width = maximum_width + padding + 2
+		else:
+			width = self.width
+		return Measurement(width, width)
+
 # Number of areas to test
 AREA_NUMBER = 8
 # Destination IP addresses with the area number
@@ -161,12 +184,12 @@ async def main():
 			for area, results in enumerate( tests ):
 				result = [ output(test) for test in results ]
 				table.add_row( f'{area + 1}',
-					Align.center( Columns( result[:PROTOCOL_NUMBER], padding=(-1, 0) ) ),
-					Align.center( Columns( result[PROTOCOL_NUMBER:], padding=(-1, 0) ) ) )
+					Align.center( ColumnsFixed( result[:PROTOCOL_NUMBER], padding=(-1, 0) ) ),
+					Align.center( ColumnsFixed( result[PROTOCOL_NUMBER:], padding=(-1, 0) ) ) )
 			# Clear the screen
 			console.clear()
 			# Print the results
-			console.print( table )
+			console.print( Align.center( table ) )
 			# Update status
 			status.update( f'Last updated on [bold]{time.strftime('%X')}', spinner='clock' )
 			# Wait for the next update
