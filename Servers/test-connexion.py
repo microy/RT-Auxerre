@@ -134,12 +134,12 @@ async def main():
 		tests = await test_all_areas()
 		# Clear screen and print results
 		print( '\033[H\033[J\nIUT RT Auxerre - Network Lab Monitoring\n' )
-		print( '	        -- IPv4 ' + '-'*PROTOCOL_DISPLAY + '       -- IPv6 ' + '-'*PROTOCOL_DISPLAY + '\n' )
+		print( '  -- Area --   -- IPv4 ' + '-'*PROTOCOL_DISPLAY + '    -- IPv6 ' + '-'*PROTOCOL_DISPLAY + '\n' )
 		for area, results in enumerate( tests ):
 			# Print results for one area
-			print( f'   Area {area + 1}   |   '
+			print( f'      {area + 1}        '
 				+ ' '.join( output(test) for test in results[:PROTOCOL_NUMBER] )
-				+ '   |   '
+				+ '    '
 				+ ' '.join( output(test) for test in results[PROTOCOL_NUMBER:] )
 			)
 		# Update time
