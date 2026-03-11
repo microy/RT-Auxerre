@@ -12,8 +12,10 @@ import base64
 import logging
 import re
 import socket
-from textual.app import App
-from textual.widgets import Footer, Input, RichLog, Static
+try:
+	from textual.app import App
+	from textual.widgets import Footer, Input, RichLog, Static
+except ImportError as error: print( error ); exit()
 
 # Multicast addresses and port
 MULTICAST_ADDRESS4 = '239.0.0.1'

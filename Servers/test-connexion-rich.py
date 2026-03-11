@@ -19,12 +19,14 @@ import ipaddress
 import os
 import socket
 import time
-from rich import box, print
-from rich.align import Align
-from rich.columns import Columns
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
+try:
+	from rich import box, print
+	from rich.align import Align
+	from rich.columns import Columns
+	from rich.console import Console
+	from rich.panel import Panel
+	from rich.table import Table
+except ImportError as error: print( error ); exit()
 
 # Number of areas to test
 AREA_NUMBER = 8

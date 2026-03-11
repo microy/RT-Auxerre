@@ -14,8 +14,10 @@ import re
 import socket
 import sys
 import threading
-from PySide6.QtGui import Qt, QKeySequence, QShortcut
-from PySide6.QtWidgets import QApplication, QCheckBox, QHBoxLayout, QLabel, QLineEdit, QRadioButton, QTextEdit, QVBoxLayout, QWidget
+try:
+	from PySide6.QtGui import Qt, QKeySequence, QShortcut
+	from PySide6.QtWidgets import QApplication, QCheckBox, QHBoxLayout, QLabel, QLineEdit, QRadioButton, QTextEdit, QVBoxLayout, QWidget
+except ImportError as error: print( error ); exit()
 
 # Multicast addresses and port
 MULTICAST_ADDRESS4 = '239.0.0.1'

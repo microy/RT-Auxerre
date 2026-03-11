@@ -16,14 +16,14 @@
 import os
 import platform
 import tempfile
-from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.handlers import FTPHandler
-from pyftpdlib.servers import FTPServer
+try:
+	from pyftpdlib.authorizers import DummyAuthorizer
+	from pyftpdlib.handlers import FTPHandler
+	from pyftpdlib.servers import FTPServer
+except ImportError as error: print( error ); exit()
 
 # Check if root
-if os.geteuid() != 0 :
-	print( '\n-> Run this application as root (sudo)...')
-	exit()
+if os.geteuid() != 0 : print( '\n-> Run this application as root (sudo)...'); exit()
 
 # Simple FTP message
 FTP_MESSAGE = rf'IUT RT Auxerre - Bienvenue sur le serveur FTP de la machine {platform.node()} !'
