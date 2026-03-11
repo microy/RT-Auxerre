@@ -134,7 +134,7 @@ async def test_all_areas():
 
 # Richified the test result
 def output( test ):
-	return Panel.fit( f'{PROTOCOLS[test[0]]}', style=f'{'green' if test[1] else 'red dim'}' )
+	return Panel.fit( f'{PROTOCOLS[test[0]]}', style=f'{'green' if test[1] else 'red dim'}', padding=(-1, 0) )
 
 # Monitoring application
 async def main():
@@ -159,8 +159,8 @@ async def main():
 			for area, results in enumerate( tests ):
 				result = [ output(test) for test in results ]
 				table.add_row( f'{area + 1}',
-					Align.center( Columns( result[:PROTOCOL_NUMBER] ) ),
-					Align.center( Columns( result[PROTOCOL_NUMBER:] ) ) )
+					Align.center( Columns( result[:PROTOCOL_NUMBER], padding=(-1, 0) ) ),
+					Align.center( Columns( result[PROTOCOL_NUMBER:], padding=(-1, 0) ) ) )
 			# Clear the screen
 			console.clear()
 			# Print the results
