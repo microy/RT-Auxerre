@@ -152,7 +152,7 @@ async def main():
 			tests = await test_all_areas()
 			# Create the table for result display
 			table = Table( title='\n[bold white]IUT RT Auxerre - Network Lab Monitoring[/bold white]\n', box=box.HORIZONTALS, header_style='bold', style='white', caption=' ' )
-			table.add_column( 'Area', style='bold', justify='center', vertical='middle' )
+			table.add_column( 'Area', style='bold', justify='center', vertical='middle', width=10 )
 			table.add_column( 'IPv4', justify='center' )
 			table.add_column( 'IPv6', justify='center' )
 			# Add the results to the table
