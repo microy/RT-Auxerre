@@ -144,7 +144,7 @@ async def test_one_area( area ):
 		# Do all the tests for this area
 		tasks = [ task_group.create_task( test_host( address, port ) )
 			for address in [ ipv4_destination, ipv6_destination ]
-			for port in [ *PROTOCOLS.keys() ] ]
+			for port in PROTOCOLS.keys() ]
 	# Return the results of the tasks for this area
 	return [ task.result() for task in tasks ]
 
@@ -199,11 +199,11 @@ async def main():
 if __name__ == '__main__':
 	# Command line parameters
 	parser = argparse.ArgumentParser( description='Network Lab Monitoring Application', formatter_class=argparse.ArgumentDefaultsHelpFormatter )
-	parser.add_argument( '-n', '--number', type=int, default=AREA_NUMBER, help=f'Area number' )
-	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help=f'Refresh interval' )
-	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help=f'Network test timeout' )
-	parser.add_argument( '-4', '--destination4', default=IPV4_ADDRESS, help=f'IPv4 destination address' )
-	parser.add_argument( '-6', '--destination6', default=IPV6_ADDRESS, help=f'IPv6 destination address' )
+	parser.add_argument( '-n', '--number', type=int, default=AREA_NUMBER, help='Area number' )
+	parser.add_argument( '-i', '--interval', type=int, default=INTERVAL, help='Refresh interval' )
+	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help='Network test timeout' )
+	parser.add_argument( '-4', '--destination4', default=IPV4_ADDRESS, help='IPv4 destination address' )
+	parser.add_argument( '-6', '--destination6', default=IPV6_ADDRESS, help='IPv6 destination address' )
 	args = parser.parse_args()
 	# Check if root
 	if os.geteuid() != 0: print( '\n-> Run this application as root (sudo)...'); exit()
