@@ -29,6 +29,7 @@ try:
 except ImportError as error: print( error ); exit()
 
 # Fix Rich columns expand=False bug
+# https://github.com/Textualize/rich/pull/3823
 from rich.measure import Measurement, measure_renderables
 from rich.padding import Padding
 class ColumnsFixed( Columns ):
@@ -37,18 +38,10 @@ class ColumnsFixed( Columns ):
 		_, right, _, left = Padding.unpack(self.padding)
 		padding = left + right
 		renderables = [*self.renderables, title] if title else [*self.renderables]
-		maximum_width = sum(
-			measure_renderables(
-				console,
-				options.update_width(options.max_width - padding - 2),
-				[renderable],
-			).maximum
-			for renderable in renderables
-		)
-		if self.width is None:
-			width = maximum_width + padding + 2
-		else:
-			width = self.width
+		maximum_width = sum( measure_renderables( console, options.update_width(options.max_width - padding - 2), [renderable] ).maximum
+			for renderable in renderables )
+		if self.width is None: width = maximum_width + padding + 2
+		else: width = self.width
 		return Measurement(width, width)
 
 # Number of areas to test
