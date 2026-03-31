@@ -56,14 +56,9 @@ TIMEOUT = 2
 # Application protocols by port
 PROTOCOLS = {
 	0: 'ICMP',
-	21: 'FTP',
-	22: 'SSH',
-	25: 'SMTP',
-	53: 'DNS',
 	80: 'HTTP',
 	443: 'HTTPS'
 }
-PROTOCOL_NUMBER = int(len(PROTOCOLS.keys()))
 
 # Ping socket parameters
 IP_FAMILY = {
@@ -156,6 +151,8 @@ def output( test ):
 
 # Monitoring application
 async def main():
+	# Get number of tested protocols
+	protocol_number = int(len(PROTOCOLS.keys()))
 	# Get the console and clear it
 	console = Console()
 	console.clear()
@@ -177,8 +174,8 @@ async def main():
 			for area, results in enumerate( tests ):
 				result = [ output(test) for test in results ]
 				table.add_row( f'{area + 1}',
-					Align.center( ColumnsFixed( result[:PROTOCOL_NUMBER], padding=(-1, 0) ) ),
-					Align.center( ColumnsFixed( result[PROTOCOL_NUMBER:], padding=(-1, 0) ) ) )
+					Align.center( ColumnsFixed( result[:protocol_number], padding=(-1, 0) ) ),
+					Align.center( ColumnsFixed( result[protocol_number:], padding=(-1, 0) ) ) )
 			# Clear the screen
 			console.clear()
 			# Print the results
@@ -197,6 +194,10 @@ if __name__ == '__main__':
 	parser.add_argument( '-t', '--timeout', type=int, default=TIMEOUT, help='Network test timeout' )
 	parser.add_argument( '-4', '--destination4', default=IPV4_ADDRESS, help='IPv4 destination address' )
 	parser.add_argument( '-6', '--destination6', default=IPV6_ADDRESS, help='IPv6 destination address' )
+	parser.add_argument( '--ftp', action='store_true', help='Test FTP service' )
+	parser.add_argument( '--ssh', action='store_true', help='Test SSH service' )
+	parser.add_argument( '--smtp', action='store_true', help='Test SMTP service' )
+	parser.add_argument( '--dns', action='store_true', help='Test DNS service' )
 	args = parser.parse_args()
 	# Check if root
 	if os.geteuid() != 0: print( '\n-> Run this application as root (sudo)...'); exit()
@@ -209,6 +210,12 @@ if __name__ == '__main__':
 	INTERVAL = args.interval
 	# Get timeout parameter
 	TIMEOUT = args.timeout
+	# Get additional services to test
+	if args.ftp: PROTOCOLS[ 21 ] = 'FTP'
+	if args.ssh: PROTOCOLS[ 22 ] = 'SSH'
+	if args.smtp: PROTOCOLS[ 25 ] = 'SMTP'
+	if args.dns: PROTOCOLS[ 53 ] = 'DNS'
+	PROTOCOLS = dict( sorted( PROTOCOLS.items() ) )
 	# Run the monitoring application
 	try: asyncio.run( main() )
 	# Ctrl+C to stop the application
