@@ -37,7 +37,7 @@ WEBPAGE = rf'''
 <head>
 	<meta charset="UTF-8">
 	<link rel="icon" href="data:,">
-	<link href="style.css" rel="stylesheet">
+	<link rel="stylesheet" href="style.css">
 	<title>IUT RT Auxerre Web Server</title>
 </head>
 <body>
