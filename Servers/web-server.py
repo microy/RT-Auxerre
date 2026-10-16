@@ -30,23 +30,35 @@ if os.geteuid() != 0 :
 	print( '\n-> Run this application as root (sudo)...')
 	exit()
 
-# Simple web page
+# Web page
 WEBPAGE = rf'''
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 	<meta charset="UTF-8">
 	<link rel="icon" href="data:,">
+	<link href="style.css" rel="stylesheet">
 	<title>IUT RT Auxerre Web Server</title>
 </head>
-<body style="font-family: sans-serif;">
-	<h1 style="text-align: center;">IUT RT Auxerre Web Server</h1>
+<body>
+	<h1>IUT RT Auxerre Web Server</h1>
 	<p><b>Bienvenue sur la machine :</b> <code>{platform.node()}</code></p>
 	<p><b>L'adresse du serveur est :</b> <code>{{}}</code></p>
 	<p><b>Vous êtes connectés en :</b> <code>{{}}</code></p>
 	<p><b>Votre adresse est :</b> <code>{{}}</code></p>
 </body>
 </html>
+'''
+
+# Stylesheet
+STYLESHEET = '''
+body {
+	font-family: sans-serif;
+}
+h1 {
+    color: blue;
+	text-align: center;
+}
 '''
 
 # Protocol list
@@ -80,29 +92,38 @@ class HTTPSServer( ThreadingHTTPSServer ) :
 class HTTPRequestHandler( SimpleHTTPRequestHandler ) :
 	# Handle GET request
 	def do_GET( self ) :
-		# Get server IP address
-		server_external_ip_address = re.search( r'Host: (\[)?(.*)(?(1)\])', self.headers.as_string() ).group( 2 )
-		server_ip_address = CLEANUP_ADDRESS( self.connection.getsockname()[0] )
-		if server_ip_address != server_external_ip_address :
-			server_ip_address = f'{server_external_ip_address} ({server_ip_address})'
-		# Get client IP address
-		self.client_ip_address = CLEANUP_ADDRESS( self.client_address[0] )
-		# Get Web protocol
-		self.web_protocol = PROTOCOL[ self.server.server_port ]
+		# Send the stylesheet
+		if self.path == '/style.css' :
+			self.send_response( HTTPStatus.OK )
+			self.send_header( 'Content-type', 'text/css' )
+			self.end_headers()
+			self.wfile.write( bytes( STYLESHEET, 'utf-8' ) )
 		# Redirect if necessary
-		if self.path != '/' :
+		elif self.path != '/' :
 			self.send_response( HTTPStatus.MOVED_PERMANENTLY )
 			self.send_header( 'Location', '/' )
 			self.end_headers()
-			return None
-		# Send the web page
-		self.send_response( HTTPStatus.OK )
-		self.send_header( 'Content-type', 'text/html' )
-		self.end_headers()
-		self.wfile.write( bytes( WEBPAGE.format( server_ip_address, self.web_protocol, self.client_ip_address ), 'utf-8' ) )
+		# Sent the Web page
+		else :
+			# Get server IP address
+			server_external_ip_address = re.search( r'Host: (\[)?(.*)(?(1)\])', self.headers.as_string() ).group( 2 )
+			server_ip_address = CLEANUP_ADDRESS( self.connection.getsockname()[0] )
+			if server_ip_address != server_external_ip_address :
+				server_ip_address = f'{server_external_ip_address} ({server_ip_address})'
+			# Get client IP address
+			self.client_ip_address = CLEANUP_ADDRESS( self.client_address[0] )
+			# Get Web protocol
+			self.web_protocol = PROTOCOL[ self.server.server_port ]
+			# Send the web page
+			self.send_response( HTTPStatus.OK )
+			self.send_header( 'Content-type', 'text/html' )
+			self.end_headers()
+			self.wfile.write( bytes( WEBPAGE.format( server_ip_address, self.web_protocol, self.client_ip_address ), 'utf-8' ) )
 	# Define the console log messages
 	def log_message( self, format, *args ) :
-		sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.client_ip_address} - ( {self.web_protocol} )\n' )
+		# Log only the web page connection (not the stylesheet)
+		if self.path == '/' :
+			sys.stderr.write( f'[ {self.log_date_time_string()} ] - Connexion from {self.client_ip_address} - ( {self.web_protocol} )\n' )
 
 # Create the HTTP server
 httpd = HTTPServer( ('::', 80), HTTPRequestHandler )
@@ -111,7 +132,7 @@ httpd = HTTPServer( ('::', 80), HTTPRequestHandler )
 httpsd = HTTPSServer( ('::', 443), HTTPRequestHandler, certfile=CERTFILE.name, keyfile=KEYFILE.name )
 
 # Print banner
-print( '\n~~~~   IUT RT Auxerre Web Server   ~~~~' )
+print( '\n~~~~   IUT RT Auxerre Web Server   ~~~~\n' )
 print( 'Press Ctrl+C to stop the application...\n' )
 
 # Handle exceptions such as Ctrl+C
