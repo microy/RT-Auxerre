@@ -36,13 +36,11 @@ WEBPAGE = rf'''
 <html lang="fr">
 <head>
 	<meta charset="UTF-8">
-	<link rel="icon" href="data:,"/>
-	<title>IUT RT Auxerre - Web Server</title>
+	<link rel="icon" href="data:,">
+	<title>IUT RT Auxerre Web Server</title>
 </head>
 <body style="font-family: sans-serif;">
-	<br/>
-	<h1 style="text-align: center;">IUT RT Auxerre - Web Server</h1>
-	<br/><br/>
+	<h1 style="text-align: center;">IUT RT Auxerre Web Server</h1>
 	<p><b>Bienvenue sur la machine :</b> <code>{platform.node()}</code></p>
 	<p><b>L'adresse du serveur est :</b> <code>{{}}</code></p>
 	<p><b>Vous êtes connectés en :</b> <code>{{}}</code></p>
@@ -113,7 +111,7 @@ httpd = HTTPServer( ('::', 80), HTTPRequestHandler )
 httpsd = HTTPSServer( ('::', 443), HTTPRequestHandler, certfile=CERTFILE.name, keyfile=KEYFILE.name )
 
 # Print banner
-print( '\n~~~ IUT RT Auxerre - Web Server    ~~~~' )
+print( '\n~~~~   IUT RT Auxerre Web Server   ~~~~' )
 print( 'Press Ctrl+C to stop the application...\n' )
 
 # Handle exceptions such as Ctrl+C
